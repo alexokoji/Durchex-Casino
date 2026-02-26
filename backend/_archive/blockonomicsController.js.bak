@@ -1,0 +1,689 @@
+const axios = require('axios');
+const CryptoPaymentV2Model = require('../models/CryptoPaymentV2Model');
+const UnifiedPaymentModel = require('../models/UnifiedPaymentModel');
+const UserModel = require('../models/UserModel');
+
+const BLOCKONOMICS_API_KEY = process.env.BLOCKONOMICS_API_KEY;
+const BLOCKONOMICS_API_URL = process.env.BLOCKONOMICS_API_URL || 'https://www.blockonomics.co/api';
+const BASE_URL = process.env.BASE_URL || 'http://localhost:5000';
+
+// USDT Configuration (ERC20 Only)
+const USDT_CONFIG = {
+    currency: 'USDT',
+    chain: 'ERC20',
+    decimals: 6,
+    requiredConfirmations: 6,
+    minAmount: 1,
+    maxAmount: 100000
+};
+
+/**
+ * Generate USDT payment address using Blockonomics
+ * Creates a unique wallet address for the user to deposit USDT
+ */
+exports.generateUSDTAddress = async (req, res) => {
+    try {
+        const { userId, isDemo } = req.body;
+
+        if (!userId) {
+            return res.status(400).json({
+                status: false,
+                message: 'Missing required field: userId'
+            });
+        }
+
+        const user = await UserModel.findById(userId);
+        if (!user) {
+            return res.status(404).json({ status: false, message: 'User not found' });
+        }
+
+        // Check if local address generation is enabled (bypass Blockonomics)
+        const useLocalAddress = process.env.USDT_USE_LOCAL_ADDRESS === 'true';
+
+        // If demo mode or local address generation enabled, generate a mock address
+        if (isDemo || useLocalAddress) {
+            const mockAddress = `0x${Buffer.from(`USDT_${userId}_${Date.now()}`).toString('hex').substring(0, 40)}`;
+
+            const cryptoPayment = new CryptoPaymentV2Model({
+                userId,
+                coinType: 'USDT',
+                chain: 'ERC20',
+                depositAddress: mockAddress,
+                amount: 0,
+                status: 'pending',
+                isDemo: isDemo || useLocalAddress,
+                requiredConfirmations: USDT_CONFIG.requiredConfirmations
+            });
+
+            const saved = await cryptoPayment.save();
+
+            return res.json({
+                status: true,
+                message: useLocalAddress ? 'USDT deposit address generated (local)' : 'Demo USDT deposit address generated',
+                data: {
+                    paymentId: saved._id,
+                    address: mockAddress,
+                    currency: USDT_CONFIG.currency,
+                    chain: USDT_CONFIG.chain,
+                    decimals: USDT_CONFIG.decimals,
+                    requiredConfirmations: USDT_CONFIG.requiredConfirmations,
+                    qrCode: `https://api.qrserver.com/v1/create-qr-code/?data=${mockAddress}&size=300x300`,
+                    status: 'pending',
+                    isDemo: isDemo || useLocalAddress
+                }
+            });
+        }
+
+        // Generate real USDT address via Blockonomics API
+        try {
+            console.log('📡 Requesting USDT address from Blockonomics...');
+
+            const response = await axios.post(
+                `${BLOCKONOMICS_API_URL}/new_address`,
+                {
+                    crypto: USDT_CONFIG.currency, // 'USDT' for ERC20
+                    addr_callback: `${BASE_URL}/api/v0/payments/blockonomics/callback`
+                },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${BLOCKONOMICS_API_KEY}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+
+            const { address, index } = response.data;
+
+            if (!address) {
+                throw new Error('No address returned from Blockonomics');
+            }
+
+            console.log(`✅ USDT address generated: ${address}`);
+
+            // Create crypto payment record
+            const cryptoPayment = new CryptoPaymentV2Model({
+                userId,
+                coinType: USDT_CONFIG.currency,
+                chain: USDT_CONFIG.chain,
+                depositAddress: address,
+                amount: 0,
+                status: 'pending',
+                isDemo: false,
+                requiredConfirmations: USDT_CONFIG.requiredConfirmations,
+                blockonomicsTransactionId: null,
+                blockonomicsIndex: index
+            });
+
+            const saved = await cryptoPayment.save();
+
+            // Create unified payment record
+            const unifiedPayment = new UnifiedPaymentModel({
+                userId,
+                paymentId: `CRYPTO-${saved._id}`,
+                paymentMethod: 'crypto',
+                cryptoPaymentId: saved._id,
+                type: 'deposit',
+                amountRequested: 0,
+                currencyCode: USDT_CONFIG.currency,
+                status: 'pending'
+            });
+
+            await unifiedPayment.save();
+
+            res.json({
+                status: true,
+                message: 'USDT payment address generated successfully',
+                data: {
+                    paymentId: saved._id,
+                    address,
+                    currency: USDT_CONFIG.currency,
+                    chain: USDT_CONFIG.chain,
+                    decimals: USDT_CONFIG.decimals,
+                    requiredConfirmations: USDT_CONFIG.requiredConfirmations,
+                    qrCode: `https://api.qrserver.com/v1/create-qr-code/?data=${address}&size=300x300`,
+                    instructions: `Send USDT (ERC20) to this address. Minimum: ${USDT_CONFIG.minAmount} USDT`,
+                    status: 'pending'
+                }
+            });
+
+        } catch (error) {
+            console.error('❌ Blockonomics API error:', error.response?.data || error.message);
+            const remoteMessage = error.response?.data?.error?.message || error.response?.data?.message || error.message;
+            const errorCode = error.response?.data?.error?.code;
+            
+            // Fallback: If Blockonomics wallet is not configured (code 1041), generate demo address
+            if (errorCode === 1041 || remoteMessage?.includes('wallet')) {
+                console.log('⚠️ Blockonomics wallet not configured. Falling back to demo address generation...');
+                const mockAddress = `0x${Buffer.from(`USDT_ERC20_${userId}_${Date.now()}`).toString('hex').substring(0, 40)}`;
+
+                const cryptoPayment = new CryptoPaymentV2Model({
+                    userId,
+                    coinType: USDT_CONFIG.currency,
+                    chain: USDT_CONFIG.chain,
+                    depositAddress: mockAddress,
+                    amount: 0,
+                    status: 'pending',
+                    isDemo: true,
+                    requiredConfirmations: USDT_CONFIG.requiredConfirmations
+                });
+
+                const saved = await cryptoPayment.save();
+
+                return res.json({
+                    status: true,
+                    message: 'USDT deposit address generated (fallback mode)',
+                    data: {
+                        paymentId: saved._id,
+                        address: mockAddress,
+                        currency: USDT_CONFIG.currency,
+                        chain: USDT_CONFIG.chain,
+                        decimals: USDT_CONFIG.decimals,
+                        requiredConfirmations: USDT_CONFIG.requiredConfirmations,
+                        qrCode: `https://api.qrserver.com/v1/create-qr-code/?data=${mockAddress}&size=300x300`,
+                        instructions: `Send USDT (ERC20) to this address. Minimum: ${USDT_CONFIG.minAmount} USDT`,
+                        status: 'pending',
+                        isDemo: true,
+                        warning: 'Demo mode: Blockonomics wallet not configured. Use simulate-deposit to test.'
+                    }
+                });
+            }
+
+            return res.status(500).json({
+                status: false,
+                message: 'Failed to generate USDT address',
+                error: remoteMessage
+            });
+        }
+
+    } catch (error) {
+        console.error('❌ Generate USDT address error:', error.message);
+        res.status(500).json({
+            status: false,
+            message: 'Failed to generate USDT address',
+            error: error.message
+        });
+    }
+};
+
+// Legacy function for backward compatibility
+exports.generateDepositAddress = exports.generateUSDTAddress;
+
+/**
+ * Get USDT payment status
+ */
+exports.getUSDTPaymentStatus = async (req, res) => {
+    try {
+        const { paymentId } = req.params;
+
+        const cryptoPayment = await CryptoPaymentV2Model.findById(paymentId);
+        if (!cryptoPayment) {
+            return res.status(404).json({ status: false, message: 'Payment not found' });
+        }
+
+        // Check if expired (24 hours)
+        if (cryptoPayment.status === 'pending' && cryptoPayment.expiresAt < new Date()) {
+            cryptoPayment.status = 'expired';
+            await cryptoPayment.save();
+        }
+
+        res.json({
+            status: true,
+            data: {
+                paymentId: cryptoPayment._id,
+                address: cryptoPayment.depositAddress,
+                currency: cryptoPayment.coinType,
+                chain: cryptoPayment.chain,
+                amount: cryptoPayment.amount,
+                confirmations: cryptoPayment.confirmations || 0,
+                requiredConfirmations: cryptoPayment.requiredConfirmations,
+                status: cryptoPayment.status,
+                transactionHash: cryptoPayment.transactionHash,
+                confirmedAt: cryptoPayment.confirmedAt,
+                isDemo: cryptoPayment.isDemo
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Get payment status error:', error.message);
+        res.status(500).json({
+            status: false,
+            message: 'Failed to get payment status',
+            error: error.message
+        });
+    }
+};
+
+// Legacy function for backward compatibility
+exports.getDepositAddressStatus = async (req, res) => {
+    try {
+        const { paymentId } = req.params;
+
+        const cryptoPayment = await CryptoPaymentV2Model.findById(paymentId);
+        if (!cryptoPayment) {
+            return res.status(404).json({ status: false, message: 'Payment not found' });
+        }
+
+        // If still pending and not confirmed within 24 hours, mark as expired
+        if (cryptoPayment.status === 'pending' && cryptoPayment.expiresAt < new Date()) {
+            cryptoPayment.status = 'expired';
+            await cryptoPayment.save();
+        }
+
+        res.json({
+            status: true,
+            data: {
+                paymentId: cryptoPayment._id,
+                depositAddress: cryptoPayment.depositAddress,
+                coinType: cryptoPayment.coinType,
+                chain: cryptoPayment.chain,
+                amount: cryptoPayment.amount,
+                confirmations: cryptoPayment.confirmations,
+                requiredConfirmations: cryptoPayment.requiredConfirmations,
+                status: cryptoPayment.status,
+                transactionHash: cryptoPayment.transactionHash,
+                confirmedAt: cryptoPayment.confirmedAt,
+                isDemo: cryptoPayment.isDemo
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Get deposit address status error:', error.message);
+        res.status(500).json({ 
+            status: false, 
+            message: 'Failed to get deposit address status',
+            error: error.message 
+        });
+    }
+};
+
+/**
+ * Handle Blockonomics callback for USDT payments
+ * Blockonomics sends this when a transaction is confirmed on-chain
+ */
+exports.handleBlockonomicsCallback = async (req, res) => {
+    try {
+        const { crypto, status, address, txid, confirmations, value } = req.body;
+
+        console.log(`📦 Blockonomics webhook received:`, {
+            crypto,
+            status,
+            address,
+            txid,
+            confirmations,
+            value
+        });
+
+        // Only process USDT transactions
+        if (crypto !== USDT_CONFIG.currency) {
+            console.log(`⚠️ Skipping non-USDT transaction: ${crypto}`);
+            return res.sendStatus(200); // Accept but ignore
+        }
+
+        // Find the crypto payment by deposit address
+        const cryptoPayment = await CryptoPaymentV2Model.findOne({
+            depositAddress: address,
+            status: { $in: ['pending', 'processing'] }
+        });
+
+        if (!cryptoPayment) {
+            console.log(`⚠️ No pending payment found for address: ${address}`);
+            return res.sendStatus(200);
+        }
+
+        // Update transaction info
+        cryptoPayment.transactionHash = txid;
+        cryptoPayment.blockonomicsTransactionId = txid;
+        cryptoPayment.amount = (value || 0) / Math.pow(10, USDT_CONFIG.decimals);
+        cryptoPayment.confirmations = confirmations || 0;
+
+        // Status from Blockonomics: 0=unconfirmed, 1=confirmed, 2=safe (multiple confirmations)
+        if (confirmations >= USDT_CONFIG.requiredConfirmations) {
+            cryptoPayment.status = 'confirmed';
+            cryptoPayment.confirmedAt = new Date();
+
+            console.log(`✅ USDT payment confirmed: ${txid}, Amount: ${cryptoPayment.amount}`);
+
+            await cryptoPayment.save();
+
+            // Update unified payment
+            await UnifiedPaymentModel.findOneAndUpdate(
+                { cryptoPaymentId: cryptoPayment._id },
+                {
+                    status: 'completed',
+                    amountReceived: cryptoPayment.amount,
+                    completedAt: new Date()
+                }
+            );
+
+            // Add USDT funds to user account
+            const user = await UserModel.findById(cryptoPayment.userId);
+            if (user) {
+                // Initialize wallet structure if needed
+                if (!user.walletBalances) {
+                    user.walletBalances = {};
+                }
+
+                // Add USDT balance
+                if (!user.walletBalances.USDT) {
+                    user.walletBalances.USDT = 0;
+                }
+
+                user.walletBalances.USDT += cryptoPayment.amount;
+
+                // Also add to demo balance for testing if needed
+                if (!user.demoBalance) user.demoBalance = { data: [] };
+
+                let usdtBalance = user.demoBalance.data.find(b => b.currency === 'USDT');
+                if (!usdtBalance) {
+                    usdtBalance = { currency: 'USDT', balance: 0 };
+                    user.demoBalance.data.push(usdtBalance);
+                }
+
+                usdtBalance.balance += cryptoPayment.amount;
+
+                await user.save();
+
+                console.log(`💰 User ${cryptoPayment.userId} credited with ${cryptoPayment.amount} USDT`);
+            }
+
+        } else {
+            // Still pending more confirmations
+            cryptoPayment.status = 'processing';
+            await cryptoPayment.save();
+            console.log(`⏳ USDT payment processing: ${confirmations}/${USDT_CONFIG.requiredConfirmations} confirmations`);
+        }
+
+        res.sendStatus(200);
+
+    } catch (error) {
+        console.error('❌ Blockonomics callback error:', error.message);
+        // Always return 200 to acknowledge receipt
+        res.sendStatus(200);
+    }
+};
+
+// Legacy function for backward compatibility
+exports.handleBlockonomicsWebhook = async (req, res) => {
+    try {
+        const { txId, address, satoshis, confirmations } = req.body;
+
+        console.log(`📦 Blockonomics webhook received (legacy): ${txId} - ${confirmations} confirmations`);
+
+        // Convert legacy format to new format
+        return exports.handleBlockonomicsCallback(req, res);
+
+    } catch (error) {
+        console.error('❌ Blockonomics webhook error:', error.message);
+        res.sendStatus(200);
+    }
+};
+
+/**
+ * Simulate USDT deposit (demo/testing only)
+ */
+exports.simulateUSDTDeposit = async (req, res) => {
+    try {
+        const { userId, address, amount } = req.body;
+
+        if (!userId || !address || !amount) {
+            return res.status(400).json({
+                status: false,
+                message: 'Missing required fields: userId, address, amount'
+            });
+        }
+
+        // Find the crypto payment
+        const cryptoPayment = await CryptoPaymentV2Model.findOne({
+            depositAddress: address,
+            userId,
+            isDemo: true
+        });
+
+        if (!cryptoPayment) {
+            return res.status(404).json({ status: false, message: 'Demo payment address not found' });
+        }
+
+        if (amount < USDT_CONFIG.minAmount) {
+            return res.status(400).json({
+                status: false,
+                message: `Minimum USDT amount is ${USDT_CONFIG.minAmount}`
+            });
+        }
+
+        if (amount > USDT_CONFIG.maxAmount) {
+            return res.status(400).json({
+                status: false,
+                message: `Maximum USDT amount is ${USDT_CONFIG.maxAmount}`
+            });
+        }
+
+        // Simulate deposit
+        cryptoPayment.amount = amount;
+        cryptoPayment.confirmations = USDT_CONFIG.requiredConfirmations;
+        cryptoPayment.status = 'confirmed';
+        cryptoPayment.confirmedAt = new Date();
+        cryptoPayment.transactionHash = `DEMO_TX_${Date.now()}`;
+
+        await cryptoPayment.save();
+
+        // Add funds to user account
+        const user = await UserModel.findById(userId);
+        if (user) {
+            if (!user.demoBalance) user.demoBalance = { data: [] };
+
+            let usdtBalance = user.demoBalance.data.find(b => b.currency === 'USDT');
+            if (!usdtBalance) {
+                usdtBalance = { currency: 'USDT', balance: 0 };
+                user.demoBalance.data.push(usdtBalance);
+            }
+
+            usdtBalance.balance += amount;
+            await user.save();
+        }
+
+        res.json({
+            status: true,
+            message: `Demo USDT deposit simulated successfully`,
+            data: {
+                amount,
+                currency: USDT_CONFIG.currency,
+                chain: USDT_CONFIG.chain,
+                transactionHash: cryptoPayment.transactionHash,
+                status: 'confirmed'
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Simulate USDT deposit error:', error.message);
+        res.status(500).json({
+            status: false,
+            message: 'Failed to simulate USDT deposit',
+            error: error.message
+        });
+    }
+};
+
+// Legacy function for backward compatibility
+exports.simulateCryptoDeposit = async (req, res) => {
+    try {
+        const { userId, coinType, chain, amount } = req.body;
+
+        if (!userId || !coinType || !chain || !amount) {
+            return res.status(400).json({ 
+                status: false, 
+                message: 'Missing required fields: userId, coinType, chain, amount' 
+            });
+        }
+
+        if (coinType !== 'USDT') {
+            return res.status(400).json({
+                status: false,
+                message: 'Only USDT (ERC20) is supported'
+            });
+        }
+
+        // Find or create deposit for simulation
+        let cryptoPayment = await CryptoPaymentV2Model.findOne({
+            userId,
+            coinType,
+            chain,
+            isDemo: true,
+            status: 'pending'
+        });
+
+        if (!cryptoPayment) {
+            cryptoPayment = new CryptoPaymentV2Model({
+                userId,
+                coinType,
+                chain,
+                depositAddress: `DEMO_${coinType}_${userId}`,
+                amount,
+                isDemo: true,
+                status: 'pending',
+                requiredConfirmations: 1
+            });
+        } else {
+            cryptoPayment.amount = amount;
+        }
+
+        cryptoPayment.transactionHash = `DEMO_TX_${Date.now()}`;
+        cryptoPayment.confirmations = cryptoPayment.requiredConfirmations;
+        cryptoPayment.status = 'confirmed';
+        cryptoPayment.confirmedAt = new Date();
+
+        const saved = await cryptoPayment.save();
+
+        // Update unified payment
+        let unifiedPayment = await UnifiedPaymentModel.findOne({
+            cryptoPaymentId: saved._id
+        });
+
+        if (!unifiedPayment) {
+            unifiedPayment = new UnifiedPaymentModel({
+                userId,
+                paymentId: `CRYPTO-${saved._id}`,
+                paymentMethod: 'crypto',
+                cryptoPaymentId: saved._id,
+                type: 'deposit',
+                amountRequested: amount,
+                currencyCode: coinType,
+                status: 'completed',
+                completedAt: new Date()
+            });
+        } else {
+            unifiedPayment.amountReceived = amount;
+            unifiedPayment.status = 'completed';
+            unifiedPayment.completedAt = new Date();
+        }
+
+        await unifiedPayment.save();
+
+        // Add funds to user
+        const user = await UserModel.findById(userId);
+        if (!user) {
+            return res.status(404).json({ status: false, message: 'User not found' });
+        }
+
+        if (!user.demoBalance) user.demoBalance = { data: [] };
+
+        let currencyBalance = user.demoBalance.data.find(b => b.currency === coinType);
+        if (!currencyBalance) {
+            currencyBalance = { currency: coinType, balance: 0 };
+            user.demoBalance.data.push(currencyBalance);
+        }
+
+        currencyBalance.balance += amount;
+        user.markModified('demoBalance');
+        await user.save();
+
+        res.json({
+            status: true,
+            message: `✅ ${amount} ${coinType} deposited successfully!`,
+            data: {
+                paymentId: saved._id,
+                amount,
+                coinType,
+                chain,
+                status: 'confirmed',
+                transactionHash: saved.transactionHash,
+                newBalance: currencyBalance.balance
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Simulate crypto deposit error:', error.message);
+        res.status(500).json({ 
+            status: false, 
+            message: 'Failed to simulate deposit',
+            error: error.message 
+        });
+    }
+};
+
+/**
+ * Get USDT transaction history for user
+ */
+exports.getUserUSDTTransactions = async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        const transactions = await CryptoPaymentV2Model.find({
+            userId,
+            coinType: USDT_CONFIG.currency
+        })
+            .sort({ createdAt: -1 })
+            .limit(50);
+
+        res.json({
+            status: true,
+            data: transactions.map(tx => ({
+                paymentId: tx._id,
+                amount: tx.amount,
+                chain: tx.chain,
+                status: tx.status,
+                transactionHash: tx.transactionHash,
+                confirmations: tx.confirmations,
+                requiredConfirmations: tx.requiredConfirmations,
+                createdAt: tx.createdAt,
+                confirmedAt: tx.confirmedAt
+            }))
+        });
+
+    } catch (error) {
+        console.error('❌ Get user transactions error:', error.message);
+        res.status(500).json({
+            status: false,
+            message: 'Failed to get user transactions',
+            error: error.message
+        });
+    }
+};
+
+// Legacy function for backward compatibility
+exports.getUserCryptoTransactions = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { limit = 50, skip = 0 } = req.query;
+
+        const transactions = await CryptoPaymentV2Model.find({ userId })
+            .sort({ createdAt: -1 })
+            .limit(parseInt(limit))
+            .skip(parseInt(skip));
+
+        const total = await CryptoPaymentV2Model.countDocuments({ userId });
+
+        res.json({
+            status: true,
+            data: transactions,
+            pagination: { total, limit: parseInt(limit), skip: parseInt(skip) }
+        });
+
+    } catch (error) {
+        console.error('❌ Get user crypto transactions error:', error.message);
+        res.status(500).json({ 
+            status: false, 
+            message: 'Failed to get transactions',
+            error: error.message 
+        });
+    }
+};

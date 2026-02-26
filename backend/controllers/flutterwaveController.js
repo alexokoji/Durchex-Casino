@@ -1,0 +1,445 @@
+const axios = require('axios');
+const crypto = require('crypto');
+const FlutterwaveTransactionModel = require('../models/FlutterwaveTransactionModel');
+const UnifiedPaymentModel = require('../models/UnifiedPaymentModel');
+const UserModel = require('../models/UserModel');
+
+const FLUTTERWAVE_API_KEY = process.env.FLUTTERWAVE_API_KEY;
+const FLUTTERWAVE_BASE_URL = process.env.FLUTTERWAVE_ENV === 'production' 
+    ? 'https://api.flutterwave.com/v3'
+    : 'https://api.flutterwave.com/v3';
+const APP_BASE_URL = process.env.APP_BASE_URL || 'http://localhost:3000';
+const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5000';
+const config = require('../config');
+
+// Initialize Flutterwave payment
+exports.initiateDeposit = async (req, res) => {
+    try {
+        const { userId, amount, currency, paymentMethod, email } = req.body;
+
+        if (!userId || !amount || !currency || !paymentMethod) {
+            return res.status(400).json({ 
+                status: false, 
+                message: 'Missing required fields: userId, amount, currency, paymentMethod' 
+            });
+        }
+
+        const user = await UserModel.findById(userId);
+        if (!user) {
+            return res.status(404).json({ status: false, message: 'User not found' });
+        }
+
+        // If DEMO_MODE is enabled, simulate the deposit flow and credit demo balance
+        if (config.DEMO_MODE) {
+            const fwTransaction = new FlutterwaveTransactionModel({
+                userId,
+                amount,
+                currency,
+                paymentMethod,
+                customerEmail: email || user.email,
+                status: 'completed',
+                statusDetails: 'Demo deposit credited'
+            });
+
+            const fwSaved = await fwTransaction.save();
+
+            const unifiedPayment = new UnifiedPaymentModel({
+                userId,
+                paymentId: `FW-${fwSaved._id}`,
+                paymentMethod: 'flutterwave',
+                flutterwaveTransactionId: fwSaved._id,
+                type: 'deposit',
+                amountRequested: amount,
+                amountReceived: amount,
+                currencyCode: currency,
+                status: 'completed',
+                completedAt: new Date()
+            });
+
+            await unifiedPayment.save();
+
+            // Credit demo balance to user
+            if (user) {
+                if (!user.demoBalance) user.demoBalance = { data: [] };
+                let currencyBalance = user.demoBalance.data.find(b => b.currency === currency);
+                if (!currencyBalance) {
+                    currencyBalance = { currency: currency, balance: 0 };
+                    user.demoBalance.data.push(currencyBalance);
+                }
+                currencyBalance.balance += parseFloat(amount);
+                user.markModified('demoBalance');
+                await user.save();
+            }
+
+            return res.json({
+                status: true,
+                message: 'Demo payment processed successfully',
+                transactionId: fwSaved._id,
+                paymentLink: `${APP_BASE_URL}/demo-payment/success` 
+            });
+        }
+
+    } catch (error) {
+        console.error('❌ Flutterwave initiate deposit error:', error.message);
+        res.status(500).json({ 
+            status: false, 
+            message: 'Failed to initiate deposit',
+            error: error.message 
+        });
+    }
+};
+
+// Verify Flutterwave payment webhook signature
+exports.verifyWebhookSignature = (req, body, signature) => {
+    const secret = process.env.FLUTTERWAVE_SECRET_HASH;
+    const hashedBody = crypto
+        .createHmac('sha256', secret)
+        .update(body)
+        .digest('hex');
+    
+    return hashedBody === signature;
+};
+
+// Handle Flutterwave webhook (payment confirmation)
+exports.handleWebhook = async (req, res) => {
+    try {
+        const signature = req.headers['verificationhash'];
+        const body = JSON.stringify(req.body);
+
+        // Verify webhook authenticity
+        if (!exports.verifyWebhookSignature(req, body, signature)) {
+            console.log('❌ Invalid Flutterwave webhook signature');
+            return res.status(401).json({ status: false, message: 'Invalid signature' });
+        }
+
+        const event = req.body;
+        console.log('📦 Flutterwave webhook received:', event.data.status);
+
+        if (event.data.status !== 'successful') {
+            console.log('⚠️ Payment not successful:', event.data.status);
+            
+            // Update transaction as failed
+            const fwTransaction = await FlutterwaveTransactionModel.findOne({
+                flutterwaveId: event.data.id
+            });
+            
+            if (fwTransaction) {
+                fwTransaction.status = 'failed';
+                fwTransaction.statusDetails = event.data.status;
+                await fwTransaction.save();
+
+                // Update unified payment
+                await UnifiedPaymentModel.findByIdAndUpdate(
+                    fwTransaction.unifiedPaymentId,
+                    { status: 'failed', statusDetails: event.data.status }
+                );
+            }
+
+            return res.json({ status: true, message: 'Webhook processed' });
+        }
+
+        // Payment successful
+        const fwTransaction = await FlutterwaveTransactionModel.findOne({
+            flutterwaveId: event.data.id
+        });
+
+        if (!fwTransaction) {
+            console.log('⚠️ Transaction not found:', event.data.id);
+            return res.json({ status: true, message: 'Webhook processed' });
+        }
+
+        // Update transaction
+        fwTransaction.status = 'completed';
+        fwTransaction.statusDetails = 'Payment confirmed';
+        fwTransaction.webhookData = event;
+        fwTransaction.confirmedAt = new Date();
+        await fwTransaction.save();
+
+        // Update unified payment
+        const unifiedPayment = await UnifiedPaymentModel.findOneAndUpdate(
+            { flutterwaveTransactionId: fwTransaction._id },
+            { 
+                status: 'completed',
+                amountReceived: fwTransaction.amount,
+                completedAt: new Date()
+            }
+        );
+
+        // Add funds to user account
+        const user = await UserModel.findById(fwTransaction.userId);
+        if (user) {
+            // Find or initialize balance for currency
+            if (!user.demoBalance) user.demoBalance = { data: [] };
+            
+            let currencyBalance = user.demoBalance.data.find(b => 
+                b.currency === fwTransaction.currency
+            );
+            
+            if (!currencyBalance) {
+                currencyBalance = { currency: fwTransaction.currency, balance: 0 };
+                user.demoBalance.data.push(currencyBalance);
+            }
+
+            currencyBalance.balance += fwTransaction.amount;
+            
+            // Mark as modified for Mongoose
+            user.markModified('demoBalance');
+            await user.save();
+
+            console.log(`✅ Added ${fwTransaction.amount} ${fwTransaction.currency} to user ${fwTransaction.userId}`);
+        }
+
+        res.json({ status: true, message: 'Payment processed successfully' });
+
+    } catch (error) {
+        console.error('❌ Flutterwave webhook error:', error.message);
+        res.status(500).json({ 
+            status: false, 
+            message: 'Webhook processing failed',
+            error: error.message 
+        });
+    }
+};
+
+// Get payment status
+exports.getPaymentStatus = async (req, res) => {
+    try {
+        const { transactionId } = req.params;
+
+        const transaction = await FlutterwaveTransactionModel.findById(transactionId);
+        if (!transaction) {
+            return res.status(404).json({ status: false, message: 'Transaction not found' });
+        }
+
+        res.json({
+            status: true,
+            data: {
+                transactionId: transaction._id,
+                status: transaction.status,
+                amount: transaction.amount,
+                currency: transaction.currency,
+                createdAt: transaction.createdAt,
+                completedAt: transaction.completedAt
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Get payment status error:', error.message);
+        res.status(500).json({ 
+            status: false, 
+            message: 'Failed to get payment status',
+            error: error.message 
+        });
+    }
+};
+
+// List user transactions
+exports.getUserTransactions = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { limit = 50, skip = 0 } = req.query;
+
+        const transactions = await FlutterwaveTransactionModel.find({ userId })
+            .sort({ createdAt: -1 })
+            .limit(parseInt(limit))
+            .skip(parseInt(skip));
+
+        const total = await FlutterwaveTransactionModel.countDocuments({ userId });
+
+        res.json({
+            status: true,
+            data: transactions,
+            pagination: { total, limit: parseInt(limit), skip: parseInt(skip) }
+        });
+
+    } catch (error) {
+        console.error('❌ Get user transactions error:', error.message);
+        res.status(500).json({ 
+            status: false, 
+            message: 'Failed to get transactions',
+            error: error.message 
+        });
+    }
+};
+
+// Initiate Fiat Withdrawal
+exports.initiateWithdrawal = async (req, res) => {
+    try {
+        const { userId, amount, currency, bankName, accountNumber, accountHolder, email, isDemo } = req.body;
+
+        if (!userId || !amount || !currency || !bankName || !accountNumber || !accountHolder) {
+            return res.status(400).json({ 
+                status: false, 
+                message: 'Missing required fields: userId, amount, currency, bankName, accountNumber, accountHolder' 
+            });
+        }
+
+        const user = await UserModel.findById(userId);
+        if (!user) {
+            return res.status(404).json({ status: false, message: 'User not found' });
+        }
+
+        // Check if user has sufficient balance
+        if (user.balance < amount) {
+            return res.status(400).json({ 
+                status: false, 
+                message: `Insufficient balance. Available: ${user.balance}, Required: ${amount}` 
+            });
+        }
+
+        // If DEMO_MODE is enabled, simulate the withdrawal
+        if (config.DEMO_MODE || isDemo) {
+            // Deduct from demo balance instead of real balance
+            if (user.demoBalance < amount) {
+                return res.status(400).json({ 
+                    status: false, 
+                    message: `Insufficient demo balance. Available: ${user.demoBalance}, Required: ${amount}` 
+                });
+            }
+
+            user.demoBalance -= amount;
+            await user.save();
+
+            const fwTransaction = new FlutterwaveTransactionModel({
+                userId,
+                amount,
+                currency,
+                type: 'withdrawal',
+                bankName,
+                accountNumber,
+                accountHolder,
+                customerEmail: email || user.email,
+                status: 'completed',
+                statusDetails: 'Demo withdrawal processed'
+            });
+
+            const fwSaved = await fwTransaction.save();
+
+            const unifiedPayment = new UnifiedPaymentModel({
+                userId,
+                paymentId: `FW-WITHDRAW-${fwSaved._id}`,
+                paymentMethod: 'flutterwave_withdrawal',
+                flutterwaveTransactionId: fwSaved._id,
+                amount,
+                currency,
+                type: 'withdrawal',
+                status: 'completed',
+                completedAt: new Date()
+            });
+
+            await unifiedPayment.save();
+
+            console.log(`✅ Demo withdrawal processed for user ${userId}: ${amount} ${currency}`);
+
+            return res.status(200).json({
+                status: true,
+                message: '✅ Demo withdrawal processed successfully',
+                data: {
+                    transactionId: fwSaved._id,
+                    amount,
+                    currency,
+                    status: 'completed'
+                }
+            });
+        }
+
+        // Production: Call Flutterwave Transfer API
+        try {
+            // Flutterwave Transfers API for payouts
+            const transferData = {
+                account_bank: accountNumber, // Would need to map to Flutterwave bank codes
+                account_number: accountNumber,
+                amount: parseInt(amount * 100), // Amount in cents
+                narration: `Withdrawal to ${accountHolder}`,
+                currency: currency,
+                reference: `WITHDRAW-${userId}-${Date.now()}`
+            };
+
+            const flutterwaveResponse = await axios.post(
+                `${FLUTTERWAVE_BASE_URL}/transfers`,
+                transferData,
+                {
+                    headers: {
+                        Authorization: `Bearer ${FLUTTERWAVE_API_KEY}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+
+            if (!flutterwaveResponse.data.status === 'success') {
+                return res.status(400).json({ 
+                    status: false, 
+                    message: 'Flutterwave withdrawal initiation failed',
+                    details: flutterwaveResponse.data.message
+                });
+            }
+
+            // Deduct from user balance
+            user.balance -= amount;
+            await user.save();
+
+            // Store transaction
+            const fwTransaction = new FlutterwaveTransactionModel({
+                userId,
+                amount,
+                currency,
+                type: 'withdrawal',
+                bankName,
+                accountNumber,
+                accountHolder,
+                customerEmail: email || user.email,
+                flutterwaveTransferId: flutterwaveResponse.data.data.id,
+                status: 'processing',
+                statusDetails: 'Withdrawal initiated, pending bank processing'
+            });
+
+            const fwSaved = await fwTransaction.save();
+
+            const unifiedPayment = new UnifiedPaymentModel({
+                userId,
+                paymentId: `FW-WITHDRAW-${fwSaved._id}`,
+                paymentMethod: 'flutterwave_withdrawal',
+                flutterwaveTransactionId: fwSaved._id,
+                amount,
+                currency,
+                type: 'withdrawal',
+                status: 'processing',
+                initiatedAt: new Date()
+            });
+
+            await unifiedPayment.save();
+
+            console.log(`✅ Fiat withdrawal initiated for user ${userId}: ${amount} ${currency}`);
+
+            return res.status(200).json({
+                status: true,
+                message: '✅ Withdrawal initiated successfully. Please check your bank account within 1-3 business days.',
+                data: {
+                    transactionId: fwSaved._id,
+                    flutterwaveTransferId: flutterwaveResponse.data.data.id,
+                    amount,
+                    currency,
+                    status: 'processing'
+                }
+            });
+
+        } catch (flutterwaveError) {
+            console.error('❌ Flutterwave transfer error:', flutterwaveError.message);
+            
+            // Log the error but return generic message for security
+            return res.status(400).json({
+                status: false,
+                message: 'Withdrawal initiation failed. Please ensure all bank details are correct.',
+                details: flutterwaveError?.response?.data?.message || flutterwaveError.message
+            });
+        }
+
+    } catch (error) {
+        console.error('❌ Initiate withdrawal error:', error.message);
+        res.status(500).json({ 
+            status: false, 
+            message: 'Withdrawal initiation failed',
+            error: error.message 
+        });
+    }
+};

@@ -1,0 +1,60 @@
+const mongoose = require('mongoose');
+mongoose.Promise = global.Promise;
+mongoose.set('strictQuery', true);
+
+const models = {};
+models.mongoose = mongoose;
+models.settingModel = require('./SettingModel');
+models.userModel = require('./UserModel');
+models.walletModel = require('./WalletModel');
+models.transactionModel = require('./TransactionModel');
+models.dailyRewardModel = require('./DailyRewardModel');
+models.turtleRoundModel = require('./TurtleRoundModel');
+models.turtleBetHistoryModel = require('./TurtleBetHistoryModel');
+models.scissorsRoundModel = require('./ScissorsRoundModel');
+models.adminUserModel = require('./AdminUserModel');
+models.adminTransactionModel = require('./AdminTransactionModel');
+models.seedModel = require('./SeedModel');
+models.minesRoundModel = require('./MinesRoundModel');
+models.rewardEnabledModel = require('./RewardEnabledModel');
+models.depositRewardSettingModel = require('./DepositRewardSettingModel');
+models.rewardHistoryModel = require('./RewardHistoryModel');
+models.freespinSettingModel = require('./FreeSpinSettingModel');
+models.spinHistoryModel = require('./SpinHistoryModel');
+models.userChatModel = require('./UserChatModel');
+models.followingModel = require('./FollowingModel');
+models.betHistoryModel = require('./BetHistoryModel');
+models.unlockSettingModel = require('./UnlockSettingModel');
+models.diceRoundModel = require('./DiceRoundModel');
+models.gameSettingModel = require('./GameSettingModel');
+models.gameListModel = require('./GameListModel');
+models.currencyListModel = require('./CurrencyListModal');
+models.userLevelModel = require('./UserLevelModel');
+models.authenticationModel = require('./AuthenticationModel');
+models.bannerTextModel = require('./BannerTextModel');
+models.swapHistoryModel = require('./SwapHistoryModel');
+models.privacySettingModel = require('./PrivacySettingModel');
+models.campaignCodeModel = require('./CampaignCodeModel');
+models.unlockBalanceModel = require('./UnlockBalanceModel');
+models.userWargerModel = require('./UserWargerModel');
+models.userFreeSpin = require('./UserFreeSpinModel');
+models.plinkoRoundModel = require('./PlinkoRoundModel');
+models.slotRoundModel = require('./SlotRoundModel');
+models.tournamentListModel = require('./TournamentList');
+models.tournamentUsersModel = require('./TournamentUsers');
+models.crashRoundModel = require('./CrashRoundModel');
+models.crashBetHistoryModel = require('./CrashBetHistoryModel');
+models.wargerHistoryModel = require('./WargerHistoryModel');
+models.withdrawalModel = require('./WithdrawalModel');
+models.depositModel = require('./DepositModel');
+models.flutterWavePaymentModel = require('./FlutterWavePaymentModel');
+models.cryptoPaymentModel = require('./CryptoPaymentModel');
+
+// New Payment System V2 Models
+models.flutterwaveTransactionModel = require('./FlutterwaveTransactionModel');
+models.cryptoPaymentV2Model = require('./CryptoPaymentV2Model');
+models.unifiedPaymentModel = require('./UnifiedPaymentModel');
+
+module.exports = models;
+
+module.exports = models;
