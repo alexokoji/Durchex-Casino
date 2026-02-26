@@ -1,23 +1,23 @@
 const isLocal = process.env.NODE_ENV === 'development';
-const pro = 'https://backend.memewarsx.com';
+const pro = 'https://casino.durchex.com';
 const dev = 'http://localhost:5000';
 const url = isLocal ? dev : pro;
 
 const Config = {
     Root: {
-        baseUrl: isLocal ? 'http://localhost:5000' : 'https://memewarsx.com',
+        baseUrl: isLocal ? 'http://localhost:5000' : 'https://casino.durchex.com',
         apiUrl: `${url}/api`,
-        socketServerUrl: isLocal ? `http://localhost:4000` : 'https://management.memewarsx.com:4001',
+        socketServerUrl: isLocal ? `http://localhost:4000` : 'https://casino.durchex.com:4001',
         socket: null,
         chatSocket: null,
-        chatSocketUrl: isLocal ? 'http://localhost:4900' : 'https://chat.memewarsx.com:4901',
-        turtleraceSocketUrl: isLocal ? 'http://localhost:5100' : 'https://turtlerace.memewarsx.com:5101',
-        scissorSocketUrl: isLocal ? 'http://localhost:5200' : 'https://scissors.memewarsx.com:5201',
-        minesSocketUrl: isLocal ? 'http://localhost:5300' : 'https://mines.memewarsx.com:5301',
-        diceSocketUrl: isLocal ? 'http://localhost:5400' : 'https://dice.memewarsx.com:5401',
-        slotSocketUrl: isLocal ? 'http://localhost:5500' : 'https://slot.memewarsx.com:5501',
-        plinkoSocketUrl: isLocal ? 'http://localhost:5600' : 'https://plinko.memewarsx.com:5601',
-        crashSocketUrl: isLocal ? 'http://localhost:5700' : 'https://crash.memewarsx.com:5701'
+        chatSocketUrl: isLocal ? 'http://localhost:4900' : 'https://casino.durchex.com:4901',
+        turtleraceSocketUrl: isLocal ? 'http://localhost:5100' : 'https://casino.durchex.com:5101',
+        scissorSocketUrl: isLocal ? 'http://localhost:5200' : 'https://casino.durchex.com:5201',
+        minesSocketUrl: isLocal ? 'http://localhost:5300' : 'https://casino.durchex.com:5301',
+        diceSocketUrl: isLocal ? 'http://localhost:5400' : 'https://casino.durchex.com:5401',
+        slotSocketUrl: isLocal ? 'http://localhost:5500' : 'https://casino.durchex.com:5501',
+        plinkoSocketUrl: isLocal ? 'http://localhost:5600' : 'https://casino.durchex.com:5601',
+        crashSocketUrl: isLocal ? 'http://localhost:5700' : 'https://casino.durchex.com:5701'
     },
     token: 'PlayZelo',
     request: {
