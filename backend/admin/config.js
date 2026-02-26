@@ -1,7 +1,7 @@
 module.exports = {
     serverInfo: {
         host: '127.0.0.1',
-        port: '6100'
+        port: process.env.PORT || '3000'
     },
     dbInfo: {
         host: '127.0.0.1',
