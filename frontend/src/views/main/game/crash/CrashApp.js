@@ -139,6 +139,13 @@ export class CrashApp extends PIXI.Application {
             this.layer_crash.completeExplosion();
     }
 
+    // allow external components to push authData (including balance)
+    updateAuthData(authData) {
+        if(this.layer_crash && typeof this.layer_crash.updateAuthData === 'function') {
+            this.layer_crash.updateAuthData(authData);
+        }
+    }
+
     createCashout(cashout) {
         if(this.state !== GAME_STATE.FLY)
             return;

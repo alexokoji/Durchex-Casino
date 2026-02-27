@@ -64,6 +64,7 @@ export class SlotLayer extends BaseLayer {
         this.createRulePayout(resource);
         this.createResult(resource);
         this.createFreeSpin(resource);
+        this.createBalanceDisplay();
         this.updateMask();
     }
 
@@ -349,22 +350,36 @@ export class SlotLayer extends BaseLayer {
     }    
 
     currencyTexture() {
-        switch(gameApp.currency.coinType) {
-            case 'BNB':
-                return this.coin_textures[0];
-            case 'BTC':
-                return this.coin_textures[1];
-            case 'ETH':
-                return this.coin_textures[2];
-            case 'TRX':
-                return this.coin_textures[3];
-            case 'USDT':
-                return this.coin_textures[4];
-            case 'ZELO':
-                return this.coin_textures[5];
-            default:
-                return null;
+        // always show USDT texture regardless of current currency
+        return this.coin_textures[4];
+    }
+
+    // called by SlotApp when authData changes
+    updateAuthData(authData) {
+        this.authData = authData;
+        this.updateBalanceDisplay();
+    }
+
+    createBalanceDisplay() {
+        const style = new PIXI.TextStyle({
+            fontFamily: 'Styrene A Web',
+            fontSize: 20,
+            fontWeight: 'bold',
+            fill: '0xFFFFFF'
+        });
+        this.balanceText = this.createText('Balance: 0.00', style, this.GAME_WIDTH - 20, 20, 1.0, 0.0);
+        this.addChild(this.balanceText);
+    }
+
+    updateBalanceDisplay() {
+        if (!this.balanceText || !this.authData) return;
+        const allowed = ['USDT','ZELO'];
+        let amount = '0.00';
+        if (this.authData.balanceData && Array.isArray(this.authData.balanceData)) {
+            const bal = this.authData.balanceData.find(b => allowed.includes(b.coinType));
+            if (bal) amount = Number(bal.balance || 0).toFixed(2);
         }
+        this.balanceText.text = `Balance: ${amount}`;
     }
 
     getResult() {

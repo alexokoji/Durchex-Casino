@@ -3,7 +3,9 @@ const crypto = require('crypto');
 const models = require('../models');
 const SocketManager = require('../socket/Manager');
 
-const FLUTTERWAVE_BASE_URL = process.env.FLUTTERWAVE_ENV === 'production' 
+// treat both 'production' and 'live' as the same (live key uses 'live' in .env)
+// using v3 endpoint since even v4 keys are currently accepted there
+const FLUTTERWAVE_BASE_URL = ['production','live'].includes(process.env.FLUTTERWAVE_ENV)
     ? 'https://api.flutterwave.com/v3'
     : 'https://api.staging.flutterwave.com/v3';
 
@@ -63,6 +65,7 @@ exports.initializeDeposit = async (req, res) => {
             }
         };
 
+        // initialize payment - v4 still requires secret key for this endpoint
         const response = await axios.post(
             `${FLUTTERWAVE_BASE_URL}/payments`,
             payloadData,
@@ -103,6 +106,7 @@ exports.verifyPayment = async (req, res) => {
             return res.json({ status: false, message: 'Missing reference' });
         }
 
+        // verification and other sensitive calls require the secret key
         const response = await axios.get(
             `${FLUTTERWAVE_BASE_URL}/transactions/verify_by_reference?tx_ref=${reference}`,
             { headers: { Authorization: `Bearer ${FLUTTERWAVE_SECRET_KEY}` } }
@@ -285,6 +289,7 @@ exports.initiateWithdrawal = async (req, res) => {
             reference
         };
 
+        // transfers must also use the secret key (path unchanged in v4)
         const response = await axios.post(
             `${FLUTTERWAVE_BASE_URL}/transfers`,
             transferPayload,

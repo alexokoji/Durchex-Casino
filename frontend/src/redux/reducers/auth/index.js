@@ -21,9 +21,15 @@ const authReducer = (state = preState, action) => {
                 userData: action.data
             };
         case 'SET_BALANCEDATA':
+            // only keep USDT/ZELO entries
+            const allowed = ['USDT','ZELO'];
+            let filtered = action.data;
+            if (Array.isArray(action.data)) {
+                filtered = action.data.filter(b => allowed.includes(b.coinType));
+            }
             return {
                 ...state,
-                balanceData: action.data
+                balanceData: filtered
             };
         default:
             state = { ...state };

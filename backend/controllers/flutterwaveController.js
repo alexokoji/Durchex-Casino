@@ -5,9 +5,10 @@ const UnifiedPaymentModel = require('../models/UnifiedPaymentModel');
 const UserModel = require('../models/UserModel');
 
 const FLUTTERWAVE_API_KEY = process.env.FLUTTERWAVE_API_KEY;
-const FLUTTERWAVE_BASE_URL = process.env.FLUTTERWAVE_ENV === 'production' 
+// base URL should point to staging unless explicitly set to production/live
+const FLUTTERWAVE_BASE_URL = ['production','live'].includes(process.env.FLUTTERWAVE_ENV)
     ? 'https://api.flutterwave.com/v3'
-    : 'https://api.flutterwave.com/v3';
+    : 'https://api.staging.flutterwave.com/v3';
 const APP_BASE_URL = process.env.APP_BASE_URL || 'http://localhost:3000';
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5000';
 const config = require('../config');

@@ -130,7 +130,12 @@ const walletSlice = createSlice({
       })
       .addCase(fetchDemoBalance.fulfilled, (state, action) => {
         state.loading = false;
-        state.demoBalance = action.payload.data;
+        // keep only USDT/ZELO entries
+        const allowed = ['USDT','ZELO'];
+        const data = action.payload.data;
+        state.demoBalance = Array.isArray(data?.data)
+            ? { data: data.data.filter(b => allowed.includes(b.coinType)) }
+            : data;
         state.demoMode = action.payload.demoMode;
       })
       .addCase(fetchDemoBalance.rejected, (state, action) => {
@@ -163,7 +168,11 @@ const walletSlice = createSlice({
       .addCase(simulateDemoDeposit.fulfilled, (state, action) => {
         state.loading = false;
         if (action.payload?.newBalance) {
-          state.demoBalance = action.payload.newBalance;
+          const allowed = ['USDT','ZELO'];
+          const nb = action.payload.newBalance;
+          state.demoBalance = Array.isArray(nb?.data)
+              ? { data: nb.data.filter(b => allowed.includes(b.coinType)) }
+              : nb;
         }
         state.success = 'Demo deposit simulated successfully';
       })
@@ -195,7 +204,8 @@ const walletSlice = createSlice({
       })
       .addCase(fetchDepositHistory.fulfilled, (state, action) => {
         state.loading = false;
-        state.depositHistory = action.payload.data || [];
+        const allowed = ['USDT','ZELO'];
+        state.depositHistory = (action.payload.data || []).filter(rec => allowed.includes(rec.coinType));
       })
       .addCase(fetchDepositHistory.rejected, (state, action) => {
         state.loading = false;
@@ -226,7 +236,8 @@ const walletSlice = createSlice({
       })
       .addCase(fetchWithdrawalHistory.fulfilled, (state, action) => {
         state.loading = false;
-        state.withdrawalHistory = action.payload.data || [];
+        const allowed = ['USDT','ZELO'];
+        state.withdrawalHistory = (action.payload.data || []).filter(rec => allowed.includes(rec.coinType));
       })
       .addCase(fetchWithdrawalHistory.rejected, (state, action) => {
         state.loading = false;

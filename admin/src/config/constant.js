@@ -1,44 +1,33 @@
 export const COINTYPES = {
-    BTC: { code: 'BTC', fullname: 'Bitcoin', token: '', decimal: 8 },
-    ETH: { code: 'ETH', fullname: 'Ethereum', token: 'erc20', decimal: 6 },
-    TRX: { code: 'TRX', fullname: 'TRON', token: 'trc20', decimal: 6 },
-    ZELO: { code: 'ZELO', fullname: 'PlayZelo', token: 'erc20', decimal: 4 }
+    USDT: { code: 'USDT', fullname: 'Tether', token: 'trc20', decimal: 6 },
+    ZELO: { code: 'ZELO', fullname: 'PlayZelo', token: '', decimal: 4 }
 };
 
 export const CURRENCIES = {
-    BTC: 'BTC',
-    ETH: 'ETH',
-    TRX: 'TRX',
+    USDT: 'USDT',
     ZELO: 'ZELO'
 }
 
 export const Fee = {
-    BTC: 0.0000001,
-    ETH: 0.00001,
-    TRX: 10,
+    USDT: 1,
     ZELO: 1
 }
 
 export const TxScanLink = {
     Mainnet: {
+        // USDT operates on chains; links may vary by chain
     },
     Testnet: {
-        BTC: 'https://sochain.com/tx/BTCTEST/',
-        ETH: 'https://sepolia.etherscan.io/tx/',
-        TRX: 'https://shasta.tronscan.org/#/transaction/'
+        // leave empty or point to appropriate explorer if needed
     }
 }
 
 export const AddressScanLink = {
     Mainnet: {
-        BTC: 'https://sochain.com/address/BTC/',
-        ETH: 'https://etherscan.io/address/',
-        TRX: 'https://tronscan.org/#/address/'
+        // not used for USDT/ZELO
     },
     Testnet: {
-        BTC: 'https://sochain.com/address/BTCTEST/',
-        ETH: 'https://sepolia.etherscan.io/address/',
-        TRX: 'https://shasta.tronscan.org/#/address/'
+        // not used
     }
 }
 

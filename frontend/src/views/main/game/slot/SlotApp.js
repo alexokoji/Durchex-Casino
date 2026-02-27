@@ -125,6 +125,10 @@ export class SlotApp extends PIXI.Application {
 
     updateAuthData(authData) {
         this.authData = authData;
+        // pass the auth data down to the layer so it can update UI
+        if (this.layer_slot && typeof this.layer_slot.updateAuthData === 'function') {
+            this.layer_slot.updateAuthData(authData);
+        }
     }
 
     updateGameState() {

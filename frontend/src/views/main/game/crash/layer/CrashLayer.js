@@ -67,8 +67,7 @@ export class CrashLayer extends BaseLayer {
         this.createHistory(resource);
         this.createCrash();
         this.createCountdown();
-        this.createExplosion(resource);
-    }
+        this.createExplosion(resource);        this.createBalanceDisplay();    }
 
     onResize(width, height) {
         super.onResize(width, height);
@@ -592,21 +591,34 @@ export class CrashLayer extends BaseLayer {
     }
 
     currencyTexture(coinType) {
-        switch(coinType) {
-            case 'BNB':
-                return this.texture_coin[0];
-            case 'BTC':
-                return this.texture_coin[1];
-            case 'ETH':
-                return this.texture_coin[2];
-            case 'TRX':
-                return this.texture_coin[3];
-            case 'USDT':
-                return this.texture_coin[4];
-            case 'ZELO':
-                return this.texture_coin[5];
-            default:
-                return null;
+        // only USDT token is displayed for all cases
+        return this.texture_coin[4];
+    }
+
+    updateAuthData(authData) {
+        this.authData = authData;
+        this.updateBalanceDisplay();
+    }
+
+    createBalanceDisplay() {
+        const style = new PIXI.TextStyle({
+            fontFamily: 'Styrene A Web',
+            fontSize: 20,
+            fontWeight: 'bold',
+            fill: '0xFFFFFF'
+        });
+        this.balanceText = this.createText('Balance: 0.00', style, this.GAME_WIDTH - 20, 20, 1.0, 0.0);
+        this.addChild(this.balanceText);
+    }
+
+    updateBalanceDisplay() {
+        if (!this.balanceText || !this.authData) return;
+        const allowed = ['USDT','ZELO'];
+        let amount = '0.00';
+        if (this.authData.balanceData && Array.isArray(this.authData.balanceData)) {
+            const bal = this.authData.balanceData.find(b => allowed.includes(b.coinType));
+            if (bal) amount = Number(bal.balance || 0).toFixed(2);
         }
+        this.balanceText.text = `Balance: ${amount}`;
     }
 }

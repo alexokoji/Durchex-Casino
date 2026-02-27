@@ -2,15 +2,19 @@ const models = require('../models');
 const tatumController = require('./tatumController');
 
 // Fee structure for different coins
+// only USDT and ZELO are supported now; other entries are retained for reference but will be ignored
 const FEE_STRUCTURE = {
-    BTC: { networkFee: 0.00005, platformFee: 0.001 }, // 0.001 BTC = 1% platform fee min
-    ETH: { networkFee: 0.001, platformFee: 0.1 }, // 0.1 ETH gas + platform
-    BNB: { networkFee: 0.005, platformFee: 0.05 },
-    TRX: { networkFee: 1, platformFee: 1 },
     USDT: { networkFee: 1, platformFee: 1 }, // 1 USDT for all stablecoins
-    USDC: { networkFee: 1, platformFee: 1 },
     ZELO: { networkFee: 0, platformFee: 0 } // No fees for platform token
 };
+
+// allowed coin types for frontend exposure
+const ALLOWED_COIN_TYPES = ['USDT','ZELO'];
+function filterBalance(bal) {
+    if (!bal || !bal.data || !Array.isArray(bal.data)) return bal;
+    return { data: bal.data.filter(item => ALLOWED_COIN_TYPES.includes(item.coinType)) };
+}
+
 
 // Demo mode functions
 exports.getDemoBalance = async (req, res) => {
@@ -30,16 +34,9 @@ exports.getDemoBalance = async (req, res) => {
         if (!user.demoBalance || !user.demoBalance.data) {
             const demoBal = {
                 data: [
-                    { coinType: 'BTC', balance: 1000, chain: 'BTC', type: 'native' },
-                    { coinType: 'ETH', balance: 1000, chain: 'ETH', type: 'native' },
-                    { coinType: 'BNB', balance: 1000, chain: 'BNB', type: 'native' },
-                    { coinType: 'TRX', balance: 1000, chain: 'TRON', type: 'native' },
                     { coinType: 'USDT', balance: 1000, chain: 'ETH', type: 'erc-20' },
                     { coinType: 'USDT', balance: 1000, chain: 'BNB', type: 'bep-20' },
                     { coinType: 'USDT', balance: 1000, chain: 'TRON', type: 'trc-20' },
-                    { coinType: 'USDC', balance: 1000, chain: 'ETH', type: 'erc-20' },
-                    { coinType: 'USDC', balance: 1000, chain: 'BNB', type: 'bep-20' },
-                    { coinType: 'USDC', balance: 1000, chain: 'TRON', type: 'trc-20' },
                     { coinType: 'ZELO', balance: 1000, chain: '', type: '' }
                 ]
             };
@@ -47,7 +44,9 @@ exports.getDemoBalance = async (req, res) => {
             await user.save();
         }
 
-        res.json({ status: true, data: user.demoBalance, demoMode: user.demoMode });
+        // hide any other coins before returning
+        const output = filterBalance(user.demoBalance);
+        res.json({ status: true, data: output, demoMode: user.demoMode });
     } catch (err) {
         console.error('getDemoBalance error:', err.message);
         return res.json({ status: false, message: 'Server Error' });
@@ -73,7 +72,8 @@ exports.toggleDemoMode = async (req, res) => {
             return res.json({ status: false, message: 'User not found' });
         }
 
-        const balanceData = demoMode ? user.demoBalance : user.balance;
+        let balanceData = demoMode ? user.demoBalance : user.balance;
+        balanceData = filterBalance(balanceData);
         res.json({ 
             status: true, 
             message: `Switched to ${demoMode ? 'demo' : 'real'} mode`,
@@ -343,7 +343,7 @@ exports.simulateDepositReceived = async (req, res) => {
         return res.json({
             status: true,
             message: `✅ ${amount} ${coinType} deposited successfully!`,
-            newBalance: balanceData,
+            newBalance: filterBalance(balanceData),
             demoMode: user.demoMode
         });
 

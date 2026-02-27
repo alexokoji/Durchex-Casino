@@ -584,10 +584,7 @@ export default function WalletDepositModal({ open, onClose }) {
                 <FormControl fullWidth size="small" sx={{ mb: 2, ...inputStyle }}>
                   <InputLabel>Coin Type</InputLabel>
                   <Select value={coin} onChange={(e) => setCoin(e.target.value)} label="Coin Type">
-                    <MenuItem value="ETH">Ⓔ Ethereum (ETH)</MenuItem>
-                    <MenuItem value="BTC">₿ Bitcoin (BTC)</MenuItem>
-                    <MenuItem value="BNB">🟡 Binance (BNB)</MenuItem>
-                    <MenuItem value="TRX">⬠ TRON (TRX)</MenuItem>
+                    <MenuItem value="USDT">⊘ Tether (USDT)</MenuItem>
                   </Select>
                 </FormControl>
 
@@ -646,7 +643,7 @@ export default function WalletDepositModal({ open, onClose }) {
                   }} 
                   onClick={() => setWithdrawType('crypto')}
                 >
-                  ₿ Crypto
+                  ⊘ Crypto
                 </Button>
                 <Button 
                   sx={{ 
@@ -675,10 +672,7 @@ export default function WalletDepositModal({ open, onClose }) {
                     <FormControl fullWidth size="small" sx={{ mb: 2, ...inputStyle }}>
                       <InputLabel>Coin Type</InputLabel>
                       <Select value={withdrawCoin} onChange={(e) => setWithdrawCoin(e.target.value)} label="Coin Type">
-                        <MenuItem value="ETH">Ⓔ Ethereum (ETH)</MenuItem>
-                        <MenuItem value="BTC">₿ Bitcoin (BTC)</MenuItem>
-                        <MenuItem value="BNB">🟡 Binance (BNB)</MenuItem>
-                        <MenuItem value="TRX">⬠ TRON (TRX)</MenuItem>
+                        <MenuItem value="USDT">⊘ Tether (USDT)</MenuItem>
                       </Select>
                     </FormControl>
 

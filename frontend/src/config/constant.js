@@ -1,14 +1,10 @@
 export const COINTYPES = {
-    BTC: { code: 'BTC', fullname: 'Bitcoin', token: '', decimal: 8 },
-    ETH: { code: 'ETH', fullname: 'Ethereum', token: 'erc20', decimal: 6 },
-    TRX: { code: 'TRX', fullname: 'TRON', token: 'trc20', decimal: 6 },
-    ZELO: { code: 'ZELO', fullname: 'PlayZelo', token: 'erc20', decimal: 4 }
+    USDT: { code: 'USDT', fullname: 'Tether', token: 'trc20', decimal: 6, icon: '⊘' },
+    ZELO: { code: 'ZELO', fullname: 'PlayZelo', token: '', decimal: 4, icon: 'Z' }
 };
 
 export const CURRENCIES = {
-    BTC: 'BTC',
-    ETH: 'ETH',
-    TRX: 'TRX',
+    USDT: 'USDT',
     ZELO: 'ZELO'
 }
 

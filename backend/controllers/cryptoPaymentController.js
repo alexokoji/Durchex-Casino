@@ -6,15 +6,9 @@ const UserModel = require('../models/UserModel');
 const BLOCKONOMICS_API_KEY = process.env.BLOCKONOMICS_API_KEY;
 const BLOCKONOMICS_API_URL = process.env.BLOCKONOMICS_API_URL || 'https://www.blockonomics.co/api';
 
-// Supported coins and their chain configs
+// Supported coins and their chain configs -- restricted to USDT only
 const COIN_CONFIG = {
-    'BTC': { chain: 'BTC', decimals: 8, requiredConfirmations: 2 },
-    'ETH': { chain: 'ETH', decimals: 18, requiredConfirmations: 12 },
-    'USDT': { chain: 'ETH', decimals: 6, requiredConfirmations: 12, isToken: true },
-    'USDC': { chain: 'ETH', decimals: 6, requiredConfirmations: 12, isToken: true },
-    'BNB': { chain: 'BSC', decimals: 18, requiredConfirmations: 10 },
-    'TRX': { chain: 'TRON', decimals: 6, requiredConfirmations: 20 },
-    'BUSD': { chain: 'BSC', decimals: 18, requiredConfirmations: 10, isToken: true }
+    'USDT': { chain: 'TRON', decimals: 6, requiredConfirmations: 1, isToken: true }
 };
 
 // Generate deposit address using Blockonomics

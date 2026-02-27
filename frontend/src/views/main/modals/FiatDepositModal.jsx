@@ -35,6 +35,13 @@ export default function FiatDepositModal({ open, onClose }) {
         amount: parseFloat(amount),
         currency
       });
+      // if the backend returned an authorization link, take the user there
+      const link = res?.data?.paymentLink || res?.data?.data?.paymentLink || res?.data?.data?.authorizationUrl;
+      if (link) {
+        // redirect immediately - backend ensures status true
+        window.location.href = link;
+        return; // leave component open until redirect
+      }
       setMessage({ type: 'success', text: res.data.message || 'Deposit created' });
       setAmount('');
     } catch (err) {

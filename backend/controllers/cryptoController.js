@@ -374,7 +374,9 @@ exports.getDailyReward = async (req, res) => {
 
 exports.getCurrencies = async (req, res) => {
     try {
-        const response = await models.currencyListModel.find({ available: true });
+        // only expose tokens we support in the frontend
+        const allowedNames = ['USDT','ZELO'];
+        const response = await models.currencyListModel.find({ available: true, currencyName: { $in: allowedNames } });
         return res.json({ status: true, data: response });
     }
     catch (err) {
@@ -415,6 +417,11 @@ exports.swapCoin = async (req, res) => {
         let { from, to, amount, userId, fromType, toType } = req.body;
         if (!from || !to || !amount) return res.json({ status: false, message: 'Invalid Request' });
         if (amount <= 0) return res.json({ status: false, message: 'Swap amount should be great than 0.' });
+
+        const ALLOWED = ['USDT','ZELO'];
+        if (!ALLOWED.includes(from) || !ALLOWED.includes(to)) {
+            return res.json({ status: false, message: 'Unsupported currency for swap' });
+        }
 
         let userData = await models.userModel.findOne({ _id: userId });
         let fromIndex = userData.balance.data.findIndex(item => item.coinType === from && item.type === fromType);

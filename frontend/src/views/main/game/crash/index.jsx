@@ -413,6 +413,7 @@ const CrashGame = () => {
         });
         pixiRef.current.appendChild(gameApp.view);
         gameApp.startGame();
+        if (authData) gameApp.updateAuthData(authData);
 
         resizeHandler();
 
@@ -434,6 +435,20 @@ const CrashGame = () => {
         }
         // eslint-disable-next-line
     }, [authData.isAuth]);
+
+    useEffect(() => {
+        if (gameApp !== null) {
+            gameApp.updateCurrency(currency);
+        }
+        // eslint-disable-next-line
+    }, [currency]);
+
+    useEffect(() => {
+        if (gameApp !== null) {
+            gameApp.updateAuthData(authData);
+        }
+        // eslint-disable-next-line
+    }, [authData]);
 
     useEffect(() => {
         if (initDataResponse !== null) {

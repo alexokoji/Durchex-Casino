@@ -311,6 +311,8 @@ const SlotGame = () => {
         });
         pixiRef.current.appendChild(gameApp.view);
         gameApp.startGame();
+        // send current authData so balance displays right away
+        if (authData) gameApp.updateAuthData(authData);
 
         resizeHandler();
 

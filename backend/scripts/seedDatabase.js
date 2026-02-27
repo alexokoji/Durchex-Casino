@@ -40,7 +40,7 @@ const seedDatabase = async () => {
 
     console.log('\n👥 Creating test users...');
 
-    // Test User 1
+    // Test User 1 (USDT only)
     const user1 = new UserModel({
       username: 'testuser1',
       userNickName: 'TestUser1',
@@ -52,17 +52,15 @@ const seedDatabase = async () => {
       demoMode: true,
       demoBalance: {
         data: [
-          { currency: 'USD', balance: 1000 },
-          { currency: 'BTC', balance: 0.05 },
-          { currency: 'ETH', balance: 1.5 },
           { currency: 'USDT', balance: 5000 },
+          { currency: 'ZELO', balance: 1000 }
         ],
       },
     });
     await user1.save();
     console.log(`   ✅ Created user: testuser1 (ID: ${user1._id})`);
 
-    // Test User 2
+    // Test User 2 (USDT only)
     const user2 = new UserModel({
       username: 'testuser2',
       userNickName: 'TestUser2',
@@ -74,10 +72,8 @@ const seedDatabase = async () => {
       demoMode: true,
       demoBalance: {
         data: [
-          { currency: 'USD', balance: 5000 },
-          { currency: 'BTC', balance: 0.2 },
-          { currency: 'ETH', balance: 5 },
           { currency: 'USDT', balance: 50000 },
+          { currency: 'ZELO', balance: 1000 }
         ],
       },
     });
@@ -86,35 +82,35 @@ const seedDatabase = async () => {
 
     console.log('\n💰 Creating test transactions...');
 
-    // Crypto Deposit 1
+    // Crypto Deposit 1 (USDT)
     const crypto1 = new CryptoPaymentV2Model({
       userId: user1._id,
-      coinType: 'BTC',
-      chain: 'BTC',
-      depositAddress: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
-      amount: 0.05,
-      transactionHash: '1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a',
-      confirmations: 6,
-      requiredConfirmations: 3,
+      coinType: 'USDT',
+      chain: 'TRON',
+      depositAddress: 'TNz2k1X8e5Yb8fe3G6Jj4XrY9D2H7cQpTf',
+      amount: 5000,
+      transactionHash: 'usdt-demo-1',
+      confirmations: 1,
+      requiredConfirmations: 1,
       status: 'confirmed',
     });
     await crypto1.save();
-    console.log(`   ✅ Created crypto deposit: BTC 0.05`);
+    console.log(`   ✅ Created crypto deposit: USDT 5000`);
 
-    // Crypto Deposit 2
+    // Crypto Deposit 2 (USDT)
     const crypto2 = new CryptoPaymentV2Model({
       userId: user2._id,
-      coinType: 'ETH',
+      coinType: 'USDT',
       chain: 'ETH',
-      depositAddress: '0x742d35Cc6634C0532925a3b844Bc024e7CeD2778',
-      amount: 2,
-      transactionHash: '2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b',
-      confirmations: 12,
-      requiredConfirmations: 12,
+      depositAddress: '0x3fC91A3aafD04e14B1EBCD80b0C4e99601d67B1F',
+      amount: 10000,
+      transactionHash: 'usdt-demo-2',
+      confirmations: 1,
+      requiredConfirmations: 1,
       status: 'confirmed',
     });
     await crypto2.save();
-    console.log(`   ✅ Created crypto deposit: ETH 2.0`);
+    console.log(`   ✅ Created crypto deposit: USDT 10000`);
 
     // Crypto Deposit 3
     const crypto3 = new CryptoPaymentV2Model({

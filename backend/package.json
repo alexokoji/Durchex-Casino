@@ -15,7 +15,8 @@
     "dice": "nodemon dice/DiceService.js",
     "slot": "nodemon slot/SlotService.js",
     "plinko": "nodemon plinko/PlinkoService.js",
-    "crash": "nodemon crash/CrashService.js"
+    "crash": "nodemon crash/CrashService.js",
+    "test": "jest --runInBand"
   },
   "repository": {
     "type": "git",
@@ -63,6 +64,8 @@
     "web3": "^1.8.2"
   },
   "devDependencies": {
+    "jest": "^29.5.0",
+    "supertest": "^6.3.3",
     "nodemon": "^3.1.14"
   }
 }

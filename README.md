@@ -22,7 +22,7 @@ A modern crypto-powered gaming platform supporting multi-chain tokens and exciti
 
 ## 💰 Supported Cryptocurrencies
 
-* ₿ Bitcoin (BTC)
+* ⊘ Bitcoin (BTC)
 * Ξ Ethereum (ETH)
 * $ Abstract
 * 🟡 Binance Smart Chain (BSC)
