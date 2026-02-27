@@ -33,7 +33,8 @@ export default function FiatDepositModal({ open, onClose }) {
       const res = await axios.post(`${process.env.REACT_APP_API_URL}/api/v0/payments/fiat/deposit`, {
         userId,
         amount: parseFloat(amount),
-        currency
+        currency,
+        paymentMethod: 'flutterwave'
       });
       // if the backend returned an authorization link, take the user there
       const link = res?.data?.paymentLink || res?.data?.data?.paymentLink || res?.data?.data?.authorizationUrl;

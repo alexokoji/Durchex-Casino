@@ -66,6 +66,29 @@ describe('Fiat payment routes (demo mode)', () => {
       expect(res.body.message).toMatch(/User not found/);
     });
 
+    it('should default paymentMethod when omitted', async () => {
+      const fakeUser = {
+        _id: 'u2',
+        email: 'foo@example.com',
+        demoBalance: { data: [] },
+        markModified: jest.fn(),
+        save: jest.fn().mockResolvedValue(true)
+      };
+      UserModel.findById.mockResolvedValue(fakeUser);
+
+      const res = await request(app)
+        .post('/api/fiat/deposit')
+        .send({ userId: 'u2', amount: 50, currency: 'USD' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe(true);
+      expect(fakeUser.save).toHaveBeenCalled();
+      const entry = fakeUser.demoBalance.data.find(b => b.currency === 'USD');
+      expect(entry.balance).toBe(50);
+      // should still receive a link
+      expect(res.body.paymentLink || res.body.data?.paymentLink).toBeDefined();
+    });
+
     it('should process demo deposit and credit demoBalance', async () => {
       const fakeUser = {
         _id: 'u1',
