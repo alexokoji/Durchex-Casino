@@ -38,6 +38,7 @@ const badgeStyle = {
 };
 
 export default function CryptoDepositModal({ open, onClose }) {
+  const API_URL = process.env.REACT_APP_API_URL || '';
   const auth = useSelector((s) => s.authentication);
   const userId = auth?.userData?._id;
 
@@ -73,7 +74,7 @@ export default function CryptoDepositModal({ open, onClose }) {
       const interval = setInterval(async () => {
         try {
           const res = await axios.get(
-            `${process.env.REACT_APP_API_URL}/api/v0/payments/usdt/${paymentId}`
+            `${API_URL}/api/v0/payments/usdt/${paymentId}`
           );
 
           const data = res.data.data;
@@ -119,7 +120,7 @@ export default function CryptoDepositModal({ open, onClose }) {
     try {
       const endpoint = '/api/v0/payments/usdt/trc20/create';
       const res = await axios.post(
-        `${process.env.REACT_APP_API_URL}${endpoint}`,
+        `${API_URL}${endpoint}`,
         {
           userId,
           amount: parsedAmount,
@@ -160,7 +161,7 @@ export default function CryptoDepositModal({ open, onClose }) {
     setLoading(true);
     try {
       const res = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/v0/payments/usdt/${paymentId}`
+        `${API_URL}/api/v0/payments/usdt/${paymentId}`
       );
 
       const data = res.data.data;

@@ -170,8 +170,7 @@ const formCardStyle = {
   marginBottom: '16px'
 };
 
-export default function WalletDepositModal({ open, onClose }) {
-  const auth = useSelector((s) => s.authentication);
+export default function WalletDepositModal({ open, onClose }) {  const API_URL = process.env.REACT_APP_API_URL || '';  const auth = useSelector((s) => s.authentication);
   const userId = auth?.userData?._id;
 
   const [tab, setTab] = useState(0);
@@ -243,7 +242,7 @@ export default function WalletDepositModal({ open, onClose }) {
     if (!userId) return;
     setLoading(true);
     try {
-      const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/v0/payments/fiat/transactions/${userId}`);
+      const res = await axios.get(`${API_URL}/api/v0/payments/fiat/transactions/${userId}`);
       setHistory(res.data || []);
     } catch (err) {
       setHistory([]);
@@ -262,7 +261,7 @@ export default function WalletDepositModal({ open, onClose }) {
     
     setLoading(true);
     try {
-      const res = await axios.post(`${process.env.REACT_APP_API_URL}/api/v0/payments/fiat/deposit`, {
+      const res = await axios.post(`${API_URL}/api/v0/payments/fiat/deposit`, {
         userId,
         amount: parseFloat(fiatAmount),
         currency: fiatCurrency,
@@ -286,7 +285,7 @@ export default function WalletDepositModal({ open, onClose }) {
     if (!userId) return setMessage({ type: 'error', text: '❌ Please sign in' });
     setLoading(true);
     try {
-      const res = await axios.post(`${process.env.REACT_APP_API_URL}/api/v0/payments/crypto/generate-address`, {
+      const res = await axios.post(`${API_URL}/api/v0/payments/crypto/generate-address`, {
         userId,
         coinType: coin,
         isDemo: DEMO_MODE
@@ -309,7 +308,7 @@ export default function WalletDepositModal({ open, onClose }) {
     if (!cryptoAmount) return setMessage({ type: 'error', text: '❌ Enter amount' });
     setLoading(true);
     try {
-      const res = await axios.post(`${process.env.REACT_APP_API_URL}/api/v0/payments/crypto/simulate-deposit`, {
+      const res = await axios.post(`${API_URL}/api/v0/payments/crypto/simulate-deposit`, {
         userId,
         address: generatedAddress,
         amount: parseFloat(cryptoAmount),
@@ -330,7 +329,7 @@ export default function WalletDepositModal({ open, onClose }) {
     if (!withdrawAmount || !withdrawAddress) return setMessage({ type: 'error', text: '❌ Fill all required fields' });
     setLoading(true);
     try {
-      const res = await axios.post(`${process.env.REACT_APP_API_URL}/api/v0/payments/crypto/withdraw`, {
+      const res = await axios.post(`${API_URL}/api/v0/payments/crypto/withdraw`, {
         userId,
         coinType: withdrawCoin,
         amount: parseFloat(withdrawAmount),
@@ -355,7 +354,7 @@ export default function WalletDepositModal({ open, onClose }) {
     }
     setLoading(true);
     try {
-      const res = await axios.post(`${process.env.REACT_APP_API_URL}/api/v0/payments/fiat/withdraw`, {
+      const res = await axios.post(`${API_URL}/api/v0/payments/fiat/withdraw`, {
         userId,
         amount: parseFloat(fiatWithdrawAmount),
         currency: fiatWithdrawCurrency,

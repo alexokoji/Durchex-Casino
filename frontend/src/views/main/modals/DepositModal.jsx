@@ -45,16 +45,19 @@ export default function DepositModal({ open, onClose, initialTab = 'fiat' }) {
     onClose && onClose();
   };
 
+  const API_URL = process.env.REACT_APP_API_URL || '';
+
   const handleCreateFiat = async () => {
     setMessage(null);
     if (!userId) return setMessage({ type: 'error', text: 'Please sign in' });
     if (!fiatAmount) return setMessage({ type: 'error', text: 'Enter amount' });
     setLoading(true);
     try {
-      const res = await axios.post(`${process.env.REACT_APP_API_URL}/api/v0/payments/fiat/deposit`, {
+      const res = await axios.post(`${API_URL}/api/v0/payments/fiat/deposit`, {
         userId,
         amount: parseFloat(fiatAmount),
-        currency: fiatCurrency
+        currency: fiatCurrency,
+        paymentMethod: 'flutterwave'
       });
       setMessage({ type: 'success', text: res.data.message || 'Deposit created' });
       setFiatAmount('');
@@ -70,7 +73,7 @@ export default function DepositModal({ open, onClose, initialTab = 'fiat' }) {
     if (!userId) return setMessage({ type: 'error', text: 'Please sign in' });
     setLoading(true);
     try {
-      const res = await axios.post(`${process.env.REACT_APP_API_URL}/api/v0/payments/crypto/generate-address`, {
+      const res = await axios.post(`${API_URL}/api/v0/payments/crypto/generate-address`, {
         userId,
         coinType: coin
       });
@@ -89,7 +92,7 @@ export default function DepositModal({ open, onClose, initialTab = 'fiat' }) {
     if (!address) return setMessage({ type: 'error', text: 'Generate address first' });
     setLoading(true);
     try {
-      const res = await axios.post(`${process.env.REACT_APP_API_URL}/api/v0/payments/crypto/simulate-deposit`, {
+      const res = await axios.post(`${API_URL}/api/v0/payments/crypto/simulate-deposit`, {
         userId,
         address,
         amount: parseFloat(cryptoAmount || 0),
