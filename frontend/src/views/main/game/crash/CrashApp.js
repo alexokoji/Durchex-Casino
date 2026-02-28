@@ -146,6 +146,15 @@ export class CrashApp extends PIXI.Application {
         }
     }
 
+    // currency may change when user switches coin types; store it for potential use
+    updateCurrency(currency) {
+        this.currency = currency;
+        // propagate to layer if the layer cares about currency
+        if(this.layer_crash && typeof this.layer_crash.updateCurrency === 'function') {
+            this.layer_crash.updateCurrency(currency);
+        }
+    }
+
     createCashout(cashout) {
         if(this.state !== GAME_STATE.FLY)
             return;

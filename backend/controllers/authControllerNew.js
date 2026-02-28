@@ -441,10 +441,12 @@ exports.getMyBalances = async (req, res) => {
             return res.json({ status: false, message: 'User not found.' });
         }
 
+        // send demoBalance when in demoMode to keep front‑end in sync
+        const payload = userData.demoMode ? (userData.demoBalance || []) : (userData.balance || []);
         return res.json({
             status: true,
             data: {
-                data: userData.balance || []
+                data: payload
             }
         });
     } catch (err) {

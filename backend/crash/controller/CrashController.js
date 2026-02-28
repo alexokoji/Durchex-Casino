@@ -63,8 +63,11 @@ exports.updatePlayerBalance = async (data, warger = false) => {
             balanceData.data[currencyIndex].balance = balanceData.data[currencyIndex].balance - amountNum;
             if (userData.demoMode) {
                 await models.userModel.findOneAndUpdate({ _id: userId }, { demoBalance: balanceData });
+                // keep userData object in sync for the socket notification
+                userData.demoBalance = balanceData;
             } else {
                 await models.userModel.findOneAndUpdate({ _id: userId }, { balance: balanceData });
+                userData.balance = balanceData;
             }
             SocketManager.requestBalanceUpdate(userData);
 
@@ -77,8 +80,10 @@ exports.updatePlayerBalance = async (data, warger = false) => {
             balanceData.data[currencyIndex].balance = balanceData.data[currencyIndex].balance + credit;
             if (userData.demoMode) {
                 await models.userModel.findOneAndUpdate({ _id: userId }, { demoBalance: balanceData });
+                userData.demoBalance = balanceData;
             } else {
                 await models.userModel.findOneAndUpdate({ _id: userId }, { balance: balanceData });
+                userData.balance = balanceData;
             }
             SocketManager.requestBalanceUpdate(userData);
 

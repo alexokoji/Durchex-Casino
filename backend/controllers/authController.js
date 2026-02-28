@@ -295,6 +295,13 @@ exports.getMyBalances = async (req, res) => {
         if (!userData)
             return res.json({ status: false, message: 'User not found' });
 
+        // if demo mode is enabled we return demoBalance instead of real balance
+        if (userData.demoMode) {
+            // ensure a structure even if demoBalance is missing
+            const demoBal = userData.demoBalance || {};
+            return res.json({ status: true, data: demoBal });
+        }
+
         if (!userData.balance)
             return res.json({ status: true, data: {} });
         else

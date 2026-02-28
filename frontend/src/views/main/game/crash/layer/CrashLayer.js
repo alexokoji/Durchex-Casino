@@ -600,6 +600,12 @@ export class CrashLayer extends BaseLayer {
         this.updateBalanceDisplay();
     }
 
+    // optional, keep track of current currency
+    updateCurrency(currency) {
+        this.currency = currency;
+        // nothing else currently needs to change here, but method exists to match interface
+    }
+
     createBalanceDisplay() {
         const style = new PIXI.TextStyle({
             fontFamily: 'Styrene A Web',
@@ -615,9 +621,31 @@ export class CrashLayer extends BaseLayer {
         if (!this.balanceText || !this.authData) return;
         const allowed = ['USDT','ZELO'];
         let amount = '0.00';
+
+        // first try the normalized balanceData that Redux populates
         if (this.authData.balanceData && Array.isArray(this.authData.balanceData)) {
             const bal = this.authData.balanceData.find(b => allowed.includes(b.coinType));
             if (bal) amount = Number(bal.balance || 0).toFixed(2);
+        }
+        // if there was nothing in balanceData and demo mode is active, fall back to demoBalance
+        else if (this.authData.userData && this.authData.userData.demoMode && this.authData.userData.demoBalance) {
+            try {
+                const demoBalance = this.authData.userData.demoBalance;
+                if (typeof demoBalance === 'number') {
+                    amount = Number(demoBalance).toFixed(2);
+                } else if (demoBalance.data && Array.isArray(demoBalance.data)) {
+                    const sum = demoBalance.data.reduce((acc, b) => {
+                        if (!b) return acc;
+                        const coin = b.coinType || b.currency;
+                        if (!allowed.includes(coin)) return acc;
+                        const val = parseFloat(b.balance || 0);
+                        return acc + (isNaN(val) ? 0 : val);
+                    }, 0);
+                    amount = sum.toFixed(2);
+                }
+            } catch (e) {
+                // ignore and keep amount 0
+            }
         }
         this.balanceText.text = `Balance: ${amount}`;
     }
