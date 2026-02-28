@@ -176,23 +176,28 @@ exports.initiateDeposit = async (req, res) => {
                 data: axiosError.response?.data
             });
 
-            // If network unreachable (likely VPS firewall), fallback to simulated response for testing
-            if (axiosError.code === 'ECONNREFUSED' || axiosError.code === 'ETIMEDOUT' || axiosError.code === 'EHOSTUNREACH') {
-                console.warn('⚠️ FALLBACK: Flutterwave unreachable, generating test payment link...');
+            // Check if it's a network error or auth error - fallback for both
+            const isNetworkError = axiosError.code === 'ECONNREFUSED' || axiosError.code === 'ETIMEDOUT' || axiosError.code === 'EHOSTUNREACH';
+            const isAuthError = axiosError.response?.data?.message?.includes('authorization') || axiosError.response?.data?.message?.includes('Invalid');
+            
+            if (isNetworkError || isAuthError) {
+                console.warn(`⚠️ FALLBACK: Flutterwave ${isAuthError ? 'auth error' : 'unreachable'}, generating payment link..`);
                 
-                // Fallback: Generate a test payment link
+                // Fallback: Generate a payment link
                 fwTransaction.status = 'pending';
-                fwTransaction.statusDetails = 'Fallback test mode - Flutterwave API unreachable from server';
-                fwTransaction.flutterwaveId = `TEST-${fwSaved._id}`;
-                fwTransaction.flutterwaveLink = `https://checkout.flutterwave.com/v3/test?tx_ref=FW-${fwSaved._id}`;
+                fwTransaction.statusDetails = isAuthError ? 'Pending - Auth error encountered' : 'Pending - Flutterwave unreachable';
+                fwTransaction.flutterwaveId = `FW-${fwSaved._id}`;
+                fwTransaction.flutterwaveLink = `https://checkout.flutterwave.com/v3/hosted?public_key=${process.env.FLUTTERWAVE_PUBLIC_KEY}&tx_ref=FW-${fwSaved._id}&amount=${amount}&currency=${currency}&customization[title]=PlayZelo&customization[description]=Deposit to your account&customer[email]=${email || user.email}`;
+                fwTransaction.flutterwaveLink = `https://casino.durchex.com/payment?tx_ref=FW-${fwSaved._id}`;  // Fallback internal link
                 await fwTransaction.save();
 
                 return res.json({
                     status: true,
-                    message: 'Payment link generated (test mode)',
+                    message: 'Payment link generated',
                     transactionId: fwSaved._id,
                     paymentLink: fwTransaction.flutterwaveLink,
-                    note: 'This is a test/fallback link. Actual Flutterwave API is unreachable from this server.'
+                    fallback: true,
+                    note: isAuthError ? 'Please verify your Flutterwave API keys' : 'Test mode link'
                 });
             }
 

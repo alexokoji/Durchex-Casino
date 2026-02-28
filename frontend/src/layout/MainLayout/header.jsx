@@ -650,7 +650,28 @@ const MainHeader = () => {
                                 </Box>
                                 <Box className={classes.BalanceRow}>
                                     <span className={classes.BalanceLabel}>Demo Balance</span>
-                                    <span className={classes.BalanceValue}>{(authData.userData && (authData.userData.demoBalance || authData.userData.demoBalance === 0)) ? Number(authData.userData.demoBalance).toFixed(2) : '0.00'}</span>
+                                    <span className={classes.BalanceValue}>{(() => {
+                                        try {
+                                            if (!authData.userData || !authData.userData.demoBalance) return '0.00';
+                                            const demoBalance = authData.userData.demoBalance;
+                                            // If it's a number (old format), return directly
+                                            if (typeof demoBalance === 'number') {
+                                                return Number(demoBalance).toFixed(2);
+                                            }
+                                            // If it's an object with data array (new format), sum all balances
+                                            if (demoBalance.data && Array.isArray(demoBalance.data)) {
+                                                const sum = demoBalance.data.reduce((acc, b) => {
+                                                    if (!b) return acc;
+                                                    const val = parseFloat(b.balance || 0);
+                                                    return acc + (isNaN(val) ? 0 : val);
+                                                }, 0);
+                                                return sum.toFixed(2);
+                                            }
+                                            return '0.00';
+                                        } catch (e) {
+                                            return '0.00';
+                                        }
+                                    })()}</span>
                                 </Box>
                                 <Box className={classes.BalanceRow}>
                                     <span className={classes.BalanceLabel}>Crypto Balance</span>

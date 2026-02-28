@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useSelector } from 'react-redux';
-import { Modal, Box, IconButton, Typography, TextField, Button, Alert } from '@mui/material';
+import { Modal, Box, IconButton, Typography, TextField, Button, Alert, Card, CardContent } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import axios from 'axios';
 
@@ -12,7 +12,12 @@ const modalBoxStyle = {
   background: '#2C2C3A',
   position: 'relative',
   borderRadius: '16px',
-  padding: '20px'
+  padding: '20px',
+  '@media (max-width: 681px)': {
+    width: 'calc(100% - 40px)',
+    marginTop: '50px',
+    borderRadius: '8px'
+  }
 };
 
 export default function FiatDepositModal({ open, onClose }) {
@@ -24,6 +29,26 @@ export default function FiatDepositModal({ open, onClose }) {
   const [currency, setCurrency] = useState('USD');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
+
+  // Calculate current balance
+  const currentBalance = useMemo(() => {
+    try {
+      const userData = auth?.userData;
+      if (!userData) return 0;
+      const balance = userData.balance || { data: [] };
+      if (typeof balance === 'number') return balance;
+      if (balance.data && Array.isArray(balance.data)) {
+        return balance.data.reduce((acc, b) => {
+          if (!b) return acc;
+          const val = parseFloat(b.balance || 0);
+          return acc + (isNaN(val) ? 0 : val);
+        }, 0);
+      }
+      return 0;
+    } catch (e) {
+      return 0;
+    }
+  }, [auth?.userData]);
 
   const handleCreate = async () => {
     setMessage(null);
@@ -70,33 +95,84 @@ export default function FiatDepositModal({ open, onClose }) {
         <IconButton onClick={onClose} sx={{ position: 'absolute', right: 8, top: 8, color: '#fff' }}>
           <CloseIcon />
         </IconButton>
-        <Typography variant="h5" sx={{ color: '#fff', mb: 2 }}>Fiat Deposit</Typography>
+        <Typography variant="h5" sx={{ color: '#fff', mb: 2, fontWeight: 'bold' }}>💰 Fiat Deposit</Typography>
+        
+        {/* Current Balance Card */}
+        <Card sx={{ mb: 2, background: '#424253', border: '1px solid #BA6AFF' }}>
+          <CardContent sx={{ py: 1.5, px: 2 }}>
+            <Typography sx={{ fontSize: '0.875rem', color: '#bbb3b3', mb: 0.5 }}>
+              Current Balance
+            </Typography>
+            <Typography sx={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#BA6AFF' }}>
+              {currentBalance.toFixed(2)} {currency}
+            </Typography>
+          </CardContent>
+        </Card>
+
         {message && (
-          <Alert severity={message.type} sx={{ mb: 2 }}>{message.text}</Alert>
+          <Alert severity={message.type} sx={{ mb: 2, color: '#FFF' }}>{message.text}</Alert>
         )}
 
         <TextField
           label="Amount"
+          type="number"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           fullWidth
           size="small"
-          sx={{ mb: 2, input: { color: '#fff' } }}
+          sx={{ 
+            mb: 2,
+            input: { color: '#fff' },
+            '& .MuiOutlinedInput-notchedOutline': {
+              borderColor: '#424253'
+            }
+          }}
+          inputProps={{ min: '1', step: '0.01' }}
         />
 
         <TextField
+          select
           label="Currency"
           value={currency}
           onChange={(e) => setCurrency(e.target.value)}
           fullWidth
           size="small"
-          sx={{ mb: 2, input: { color: '#fff' } }}
-        />
+          sx={{ 
+            mb: 2,
+            '& .MuiOutlinedInput-root': {
+              color: '#fff'
+            },
+            '& .MuiOutlinedInput-notchedOutline': {
+              borderColor: '#424253'
+            },
+            '& .MuiSvgIcon-root': {
+              color: '#fff'
+            }
+          }}
+          SelectProps={{
+            native: true,
+          }}
+        >
+          <option value="NGN">NGN - Nigerian Naira</option>
+          <option value="USD">USD - US Dollar</option>
+          <option value="EUR">EUR - Euro</option>
+          <option value="GBP">GBP - British Pound</option>
+        </TextField>
 
         <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-          <Button variant="contained" color="secondary" onClick={onClose}>Cancel</Button>
-          <Button variant="contained" onClick={handleCreate} disabled={loading}>
-            {loading ? 'Creating...' : 'Create Deposit'}
+          <Button variant="outlined" onClick={onClose} sx={{ color: '#fff', borderColor: '#424253' }}>
+            Cancel
+          </Button>
+          <Button 
+            variant="contained" 
+            onClick={handleCreate} 
+            disabled={loading}
+            sx={{ 
+              background: 'linear-gradient(135deg, #5A45D1 0%, #BA6AFF 100%)',
+              fontWeight: 'bold'
+            }}
+          >
+            {loading ? 'Processing...' : 'Proceed to Payment'}
           </Button>
         </Box>
       </Box>

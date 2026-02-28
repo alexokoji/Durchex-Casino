@@ -8,8 +8,10 @@ exports.saveDiceRound = async (data) => {
     try {
         const userData = await models.userModel.findOne({ _id: data.userId });
 
-        const currencyIndex = userData.balance.data.findIndex(item => (item.coinType === userData.currency.coinType && item.type === userData.currency.type));
-        if (userData.balance.data[currencyIndex].balance < Number(data.betAmount)) {
+        // Use demoBalance if in demo mode, otherwise use regular balance
+        const balanceData = userData.demoMode ? (userData.demoBalance || { data: [] }) : userData.balance;
+        const currencyIndex = balanceData.data.findIndex(item => (item.coinType === userData.currency.coinType && item.type === userData.currency.type));
+        if (balanceData.data[currencyIndex].balance < Number(data.betAmount)) {
             return { status: false, message: 'Not enough balance' };
         }
         else {
@@ -30,15 +32,23 @@ exports.saveDiceRound = async (data) => {
             }).save();
             if (data.roundResult === 'win') {
                 const winAmount = Number(data.betAmount) * (Number(data.payout) - 1);
-                userData.balance.data[currencyIndex].balance = userData.balance.data[currencyIndex].balance + winAmount;
-                await models.userModel.findOneAndUpdate({ _id: data.userId }, { balance: userData.balance });
+                balanceData.data[currencyIndex].balance = balanceData.data[currencyIndex].balance + winAmount;
+                if (userData.demoMode) {
+                    await models.userModel.findOneAndUpdate({ _id: data.userId }, { demoBalance: balanceData });
+                } else {
+                    await models.userModel.findOneAndUpdate({ _id: data.userId }, { balance: balanceData });
+                }
                 // House pays the win amount
                 try { await houseHelper.debitHouse(winAmount); } catch (err) { console.error('diceController house debit error', err.message); }
             }
             else if (data.roundResult === 'lost') {
                 const lostAmount = Number(data.betAmount);
-                userData.balance.data[currencyIndex].balance = userData.balance.data[currencyIndex].balance - lostAmount;
-                await models.userModel.findOneAndUpdate({ _id: data.userId }, { balance: userData.balance });
+                balanceData.data[currencyIndex].balance = balanceData.data[currencyIndex].balance - lostAmount;
+                if (userData.demoMode) {
+                    await models.userModel.findOneAndUpdate({ _id: data.userId }, { demoBalance: balanceData });
+                } else {
+                    await models.userModel.findOneAndUpdate({ _id: data.userId }, { balance: balanceData });
+                }
                 // Credit house with the lost bet
                 try { await houseHelper.creditHouse(lostAmount); } catch (err) { console.error('diceController house credit error', err.message); }
             }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import {
   Modal,
@@ -7,7 +7,9 @@ import {
   Typography,
   TextField,
   Button,
-  Alert
+  Alert,
+  Card,
+  CardContent
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
@@ -22,7 +24,14 @@ const modalBoxStyle = {
   position: 'relative',
   borderRadius: '16px',
   padding: '30px',
-  overflowY: 'auto'
+  overflowY: 'auto',
+  '@media (max-width: 681px)': {
+    width: 'calc(100% - 60px)',
+    maxHeight: '85vh',
+    borderRadius: '8px',
+    padding: '20px',
+    marginTop: '20px'
+  }
 };
 
 const sectionStyle = {
@@ -55,6 +64,26 @@ export default function CryptoWithdrawModal({ open, onClose }) {
   const [step, setStep] = useState('form'); // 'form' or 'result'
   const [withdrawalId, setWithdrawalId] = useState(null);
   const [withdrawalStatus, setWithdrawalStatus] = useState(null);
+
+  // Calculate current balance
+  const currentBalance = useMemo(() => {
+    try {
+      const userData = auth?.userData;
+      if (!userData || !userData.balance) return 0;
+      const balance = userData.balance;
+      if (typeof balance === 'number') return balance;
+      if (balance.data && Array.isArray(balance.data)) {
+        return balance.data.reduce((acc, b) => {
+          if (!b) return acc;
+          const val = parseFloat(b.balance || 0);
+          return acc + (isNaN(val) ? 0 : val);
+        }, 0);
+      }
+      return 0;
+    } catch (e) {
+      return 0;
+    }
+  }, [auth?.userData]);
 
   // Reset when modal closes
   useEffect(() => {
@@ -167,6 +196,20 @@ export default function CryptoWithdrawModal({ open, onClose }) {
         </Typography>
 
         {message && <Alert severity={message.type} sx={{ mb: 2 }}>{message.text}</Alert>}
+
+        {/* Current Balance Card */}
+        {step === 'form' && (
+          <Card sx={{ mb: 2, background: '#424253', border: '1px solid #667eea' }}>
+            <CardContent sx={{ py: 1.5, px: 2 }}>
+              <Typography sx={{ fontSize: '0.875rem', color: '#aaa', mb: 0.5 }}>
+                Available Balance
+              </Typography>
+              <Typography sx={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#667eea' }}>
+                {currentBalance.toFixed(6)} USDT
+              </Typography>
+            </CardContent>
+          </Card>
+        )}
 
         {step === 'form' && (
           <Box sx={sectionStyle}>

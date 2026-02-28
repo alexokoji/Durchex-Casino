@@ -27,8 +27,10 @@ exports.savePlinkoRound = async (data) => {
         const { serverSeed, clientSeed, roundNumber, userId, betAmount, rowCount, risk, payout } = data;
         const userData = await models.userModel.findOne({ _id: userId });
 
-        const currencyIndex = userData.balance.data.findIndex(item => (item.coinType === userData.currency.coinType && item.type === userData.currency.type));
-        if (userData.balance.data[currencyIndex].balance < Number(data.betAmount)) {
+        // Use demoBalance if in demo mode, otherwise use regular balance
+        const balanceData = userData.demoMode ? (userData.demoBalance || { data: [] }) : userData.balance;
+        const currencyIndex = balanceData.data.findIndex(item => (item.coinType === userData.currency.coinType && item.type === userData.currency.type));
+        if (balanceData.data[currencyIndex].balance < Number(data.betAmount)) {
             return { status: false, message: 'Not enough balance' };
         }
         else {
@@ -47,8 +49,12 @@ exports.savePlinkoRound = async (data) => {
             }).save();
             const winAmount = Number(betAmount) * (Number(payout) - 1);
             if (winAmount > 0) {
-                userData.balance.data[currencyIndex].balance = userData.balance.data[currencyIndex].balance + winAmount;
-                await models.userModel.findOneAndUpdate({ _id: data.userId }, { balance: userData.balance });
+                balanceData.data[currencyIndex].balance = balanceData.data[currencyIndex].balance + winAmount;
+                if (userData.demoMode) {
+                    await models.userModel.findOneAndUpdate({ _id: data.userId }, { demoBalance: balanceData });
+                } else {
+                    await models.userModel.findOneAndUpdate({ _id: data.userId }, { balance: balanceData });
+                }
                 // Debit house for the payout
                 try { await houseHelper.debitHouse(winAmount); } catch (err) { console.error('PlinkoController house debit error', err.message); }
             }

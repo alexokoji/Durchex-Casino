@@ -179,6 +179,12 @@ const WalletModal = ({ open, setOpen }) => {
     }
   }, [wallet.success, wallet.error, dispatch]);
 
+  // Refresh balance display on user data change
+  useEffect(() => {
+    // This effect triggers whenever authentication data changes
+    // Causing a re-render with updated balance values
+  }, [authentication?.userData?.demoBalance, authentication?.userData?.balance]);
+
   const handleGetDepositAddress = async () => {
     if (userId) {
       await dispatch(fetchDepositAddress({ userId, coinType, chain: 'ethereum', tokenType }));
@@ -268,7 +274,45 @@ const WalletModal = ({ open, setOpen }) => {
     }
   };
 
-  return (
+  // Calculate demo balance total
+  const calculateDemoBalance = () => {
+    try {
+      const userData = authentication?.userData;
+      if (!userData || !userData.demoBalance) return 0;
+      const demoBalance = userData.demoBalance;
+      if (typeof demoBalance === 'number') return demoBalance;
+      if (demoBalance.data && Array.isArray(demoBalance.data)) {
+        return demoBalance.data.reduce((acc, b) => {
+          if (!b) return acc;
+          const val = parseFloat(b.balance || 0);
+          return acc + (isNaN(val) ? 0 : val);
+        }, 0);
+      }
+      return 0;
+    } catch (e) {
+      return 0;
+    }
+  };
+
+  // Calculate real balance total
+  const calculateRealBalance = () => {
+    try {
+      const userData = authentication?.userData;
+      if (!userData || !userData.balance) return 0;
+      const balance = userData.balance;
+      if (typeof balance === 'number') return balance;
+      if (balance.data && Array.isArray(balance.data)) {
+        return balance.data.reduce((acc, b) => {
+          if (!b) return acc;
+          const val = parseFloat(b.balance || 0);
+          return acc + (isNaN(val) ? 0 : val);
+        }, 0);
+      }
+      return 0;
+    } catch (e) {
+      return 0;
+    }
+  };
     <Modal
       open={open}
       onClose={handleOnClose}
@@ -316,6 +360,40 @@ const WalletModal = ({ open, setOpen }) => {
               />
             </Box>
           </Box>
+
+          {/* Current Balance Display */}
+          <Grid container spacing={2} sx={{ mb: 3 }}>
+            <Grid item xs={12} sm={6}>
+              <Card sx={{ background: '#424253', border: '1px solid #5A45D1', height: '100%' }}>
+                <CardContent>
+                  <Typography sx={{ fontSize: '0.875rem', color: '#bbb3b3', mb: 1 }}>
+                    🎮 Demo Balance
+                  </Typography>
+                  <Typography sx={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#5A45D1' }}>
+                    {calculateDemoBalance().toFixed(2)}
+                  </Typography>
+                  <Typography sx={{ fontSize: '0.75rem', color: '#bbb3b3', mt: 1 }}>
+                    {(authentication?.userData?.demoBalance?.data?.length || 0)} currencies
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Card sx={{ background: '#424253', border: '1px solid #BA6AFF', height: '100%' }}>
+                <CardContent>
+                  <Typography sx={{ fontSize: '0.875rem', color: '#bbb3b3', mb: 1 }}>
+                    💰 Real Balance
+                  </Typography>
+                  <Typography sx={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#BA6AFF' }}>
+                    {calculateRealBalance().toFixed(2)}
+                  </Typography>
+                  <Typography sx={{ fontSize: '0.75rem', color: '#bbb3b3', mt: 1 }}>
+                    {(authentication?.userData?.balance?.data?.length || 0)} currencies
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
 
           {/* Tabs */}
           <Box className={classes.PageOptionBox}>

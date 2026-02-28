@@ -47,19 +47,25 @@ exports.updatePlayerBalance = async (data, warger = false) => {
         if (!userData)
             return { status: false, message: 'User not found' };
 
-        const currencyIndex = userData.balance.data.findIndex(item => (item.coinType === userData.currency.coinType && item.type === userData.currency.type));
+        // Use demoBalance if in demo mode, otherwise use regular balance
+        const balanceData = userData.demoMode ? (userData.demoBalance || { data: [] }) : userData.balance;
+        const currencyIndex = balanceData.data.findIndex(item => (item.coinType === userData.currency.coinType && item.type === userData.currency.type));
         const amountNum = Number(amount) || 0;
 
         // If positive amount => deduct from user (placing bet)
         if (amountNum > 0) {
-            if (userData.balance.data[currencyIndex].balance < amountNum)
+            if (balanceData.data[currencyIndex].balance < amountNum)
                 return { status: false, message: 'Not enough balance' };
 
             if (warger)
                 SocketManager.requestWargerAmountUpdate({ userId: userId, amount: amountNum, coinType: userData.currency });
 
-            userData.balance.data[currencyIndex].balance = userData.balance.data[currencyIndex].balance - amountNum;
-            await models.userModel.findOneAndUpdate({ _id: userId }, { balance: userData.balance });
+            balanceData.data[currencyIndex].balance = balanceData.data[currencyIndex].balance - amountNum;
+            if (userData.demoMode) {
+                await models.userModel.findOneAndUpdate({ _id: userId }, { demoBalance: balanceData });
+            } else {
+                await models.userModel.findOneAndUpdate({ _id: userId }, { balance: balanceData });
+            }
             SocketManager.requestBalanceUpdate(userData);
 
             // Credit house with the lost bet
@@ -68,8 +74,12 @@ exports.updatePlayerBalance = async (data, warger = false) => {
         else if (amountNum < 0) {
             // Negative amount => credit user (refund or payout)
             const credit = Math.abs(amountNum);
-            userData.balance.data[currencyIndex].balance = userData.balance.data[currencyIndex].balance + credit;
-            await models.userModel.findOneAndUpdate({ _id: userId }, { balance: userData.balance });
+            balanceData.data[currencyIndex].balance = balanceData.data[currencyIndex].balance + credit;
+            if (userData.demoMode) {
+                await models.userModel.findOneAndUpdate({ _id: userId }, { demoBalance: balanceData });
+            } else {
+                await models.userModel.findOneAndUpdate({ _id: userId }, { balance: balanceData });
+            }
             SocketManager.requestBalanceUpdate(userData);
 
             // Debit house for the payout/refund

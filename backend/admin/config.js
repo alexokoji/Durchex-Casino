@@ -1,7 +1,8 @@
 module.exports = {
     serverInfo: {
         host: '127.0.0.1',
-        port: process.env.PORT || '3000'
+        // avoid colliding with other critical processes on 3000
+        port: process.env.ADMIN_PORT || '3001'  // ignore generic PORT (--pm2 sets PORT=3000)
     },
     dbInfo: {
         host: '127.0.0.1',

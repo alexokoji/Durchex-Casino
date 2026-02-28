@@ -13,16 +13,22 @@ exports.updateMyBalance = async (data) => {
         if (!userData)
             return { status: false, message: 'User not found' };
 
-        const currencyIndex = userData.balance.data.findIndex(item => (item.coinType === userData.currency.coinType && item.type === userData.currency.type));
-        if (userData.balance.data[currencyIndex].balance < Number(balance)) {
+        // Use demoBalance if in demo mode, otherwise use regular balance
+        const balanceData = userData.demoMode ? (userData.demoBalance || { data: [] }) : userData.balance;
+        const currencyIndex = balanceData.data.findIndex(item => (item.coinType === userData.currency.coinType && item.type === userData.currency.type));
+        if (balanceData.data[currencyIndex].balance < Number(balance)) {
             return { status: false, message: 'Not enough balance' };
         }
         else {
             requestWargerAmountUpdate({ userId: userId, amount: balance, coinType: userData.currency });
-            if (userData.balance.data[currencyIndex].balance >= Number(balance)) {
-                userData.balance.data[currencyIndex].balance = userData.balance.data[currencyIndex].balance - Number(balance);
-                await models.userModel.findOneAndUpdate({ _id: userId }, { balance: userData.balance });
-                return { status: true, data: userData.balance, userData: userData };
+            if (balanceData.data[currencyIndex].balance >= Number(balance)) {
+                balanceData.data[currencyIndex].balance = balanceData.data[currencyIndex].balance - Number(balance);
+                if (userData.demoMode) {
+                    await models.userModel.findOneAndUpdate({ _id: userId }, { demoBalance: balanceData });
+                } else {
+                    await models.userModel.findOneAndUpdate({ _id: userId }, { balance: balanceData });
+                }
+                return { status: true, data: balanceData, userData: userData };
             }
             else
                 return { status: false, message: 'Not enough balance' };
@@ -39,9 +45,15 @@ exports.updateBalances = async (data) => {
     try {
         data.map(async (betUser) => {
             const userData = await models.userModel.findOne({ _id: betUser.userId });
-            const currencyIndex = userData.balance.data.findIndex(item => (item.coinType === userData.currency.coinType && item.type === userData.currency.type));
-            userData.balance.data[currencyIndex].balance = userData.balance.data[currencyIndex].balance + betUser.profit;
-            await models.userModel.findOneAndUpdate({ _id: betUser.userId }, { balance: userData.balance });
+            // Use demoBalance if in demo mode, otherwise use regular balance
+            const balanceData = userData.demoMode ? (userData.demoBalance || { data: [] }) : userData.balance;
+            const currencyIndex = balanceData.data.findIndex(item => (item.coinType === userData.currency.coinType && item.type === userData.currency.type));
+            balanceData.data[currencyIndex].balance = balanceData.data[currencyIndex].balance + betUser.profit;
+            if (userData.demoMode) {
+                await models.userModel.findOneAndUpdate({ _id: betUser.userId }, { demoBalance: balanceData });
+            } else {
+                await models.userModel.findOneAndUpdate({ _id: betUser.userId }, { balance: balanceData });
+            }
         });
         return;
     }

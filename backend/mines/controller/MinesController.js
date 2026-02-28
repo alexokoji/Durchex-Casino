@@ -11,21 +11,27 @@ exports.updateMyBalance = async (data) => {
         if (!userData)
             return { status: false, message: 'User not found' };
 
-        const currencyIndex = userData.balance.data.findIndex(item => (item.coinType === userData.currency.coinType && item.type === userData.currency.type));
+        // Use demoBalance if in demo mode, otherwise use regular balance
+        const balanceData = userData.demoMode ? (userData.demoBalance || { data: [] }) : userData.balance;
+        const currencyIndex = balanceData.data.findIndex(item => (item.coinType === userData.currency.coinType && item.type === userData.currency.type));
         const amountNum = Number(betAmount) || 0;
         // Deducting bet (positive) or crediting (negative)
         if (amountNum > 0) {
-            if (userData.balance.data[currencyIndex].balance < amountNum) {
+            if (balanceData.data[currencyIndex].balance < amountNum) {
                 return { status: false, message: 'Not enough balance' };
             }
-            if (userData.balance.data[currencyIndex].balance >= amountNum) {
+            if (balanceData.data[currencyIndex].balance >= amountNum) {
                 if (betAmount >= 0 || type === 'finish')
                     requestWargerAmountUpdate({ userId: userId, amount: data.betAmount, coinType: userData.currency });
-                userData.balance.data[currencyIndex].balance = userData.balance.data[currencyIndex].balance - amountNum;
-                await models.userModel.findOneAndUpdate({ _id: userId }, { balance: userData.balance });
+                balanceData.data[currencyIndex].balance = balanceData.data[currencyIndex].balance - amountNum;
+                if (userData.demoMode) {
+                    await models.userModel.findOneAndUpdate({ _id: userId }, { demoBalance: balanceData });
+                } else {
+                    await models.userModel.findOneAndUpdate({ _id: userId }, { balance: balanceData });
+                }
                 // Credit house with lost bet
                 try { await houseHelper.creditHouse(amountNum); } catch (err) { console.error('MinesController house credit error', err.message); }
-                return { status: true, data: userData.balance };
+                return { status: true, data: balanceData };
             }
             else
                 return { status: false, message: 'Not enough balance' };
@@ -33,11 +39,15 @@ exports.updateMyBalance = async (data) => {
         else if (amountNum < 0) {
             // Negative amount => credit user (win/refund)
             const credit = Math.abs(amountNum);
-            userData.balance.data[currencyIndex].balance = userData.balance.data[currencyIndex].balance + credit;
-            await models.userModel.findOneAndUpdate({ _id: userId }, { balance: userData.balance });
+            balanceData.data[currencyIndex].balance = balanceData.data[currencyIndex].balance + credit;
+            if (userData.demoMode) {
+                await models.userModel.findOneAndUpdate({ _id: userId }, { demoBalance: balanceData });
+            } else {
+                await models.userModel.findOneAndUpdate({ _id: userId }, { balance: balanceData });
+            }
             // Debit house for payout
             try { await houseHelper.debitHouse(credit); } catch (err) { console.error('MinesController house debit error', err.message); }
-            return { status: true, data: userData.balance };
+            return { status: true, data: balanceData };
         }
     }
     catch (err) {
