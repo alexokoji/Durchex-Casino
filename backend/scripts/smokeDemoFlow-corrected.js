@@ -1,0 +1,137 @@
+/*
+ * Smoke test for demo balance flow.
+ * Usage: node scripts/smokeDemoFlow.js
+ *
+ * This script connects to the same MongoDB used by the backend, creates a
+ * disposable test user (or reuses it), enables demo mode, simulates a deposit,
+ * and then exercises the Crash/Slot controllers to place a bet and credit a
+ * payout.  All operations print their results so you can verify the demo
+ * balance updates correctly.
+ *
+ * You can extend this script with additional controllers (dice, plinko, etc.)
+ * following the same pattern.  The goal is a lightweight end-to-end sanity
+ * check that the backend logic used by the frontend works as expected.
+ */
+
+const mongoose = require('mongoose');
+// script now lives under backend/scripts, so relative paths are simpler
+const config = require('../config');
+const models = require('../models/index');
+const walletController = require('../controllers/walletController');
+const crashController = require('../crash/controller/CrashController');
+const slotController = require('../slot/controller/SlotController');
+const minesController = require('../mines/controller/MinesController');
+const diceController = require('../dice/controller/DiceController');
+const plinkoController = require('../plinko/controller/PlinkoController');
+const turtleController = require('../turtlerace/controllers/TurtleController');
+
+async function main() {
+    await mongoose.connect(config.DB, { useNewUrlParser: true, useUnifiedTopology: true });
+    console.log('🗄️  Connected to database');
+
+    // find or create a test user
+    let user = await models.userModel.findOne({ email: 'smoke@demo.test' });
+    if (!user) {
+        user = await new models.userModel({
+            email: 'smoke@demo.test',
+            password: 'password',
+            userNickName: 'SmokeTester',
+            currency: { coinType: 'CHIPS', type: 'chip' },
+            balance: { data: [{ coinType: 'CHIPS', balance: 0, chain: '', type: 'native' }] },
+            demoMode: true,
+            demoBalance: { data: [{ coinType: 'CHIPS', balance: 0, chain: '', type: 'native' }] }
+        }).save();
+        console.log('➕ Created new demo user', user._id);
+    } else {
+        console.log('♻️  Reusing existing demo user', user._id);
+    }
+
+    // ensure demo mode is enabled
+    user.demoMode = true;
+    if (!user.demoBalance || !Array.isArray(user.demoBalance.data)) {
+        user.demoBalance = { data: [{ coinType: 'CHIPS', balance: 0, chain: '', type: 'native' }] };
+    }
+    await user.save();
+
+    console.log('🔁 Demo mode is active');
+
+    // simulate deposit via the legacy route handler
+    const req = { body: { userId: user._id.toString(), coinType: 'CHIPS', chain: '', amount: 150 } };
+    const res = { json: (payload) => { console.log('📥 simulateDepositReceived response:', payload); return payload; } };
+    await walletController.simulateDepositReceived(req, res);
+
+    user = await models.userModel.findById(user._id);
+    console.log('💰 Demo balance after deposit:', JSON.stringify(user.demoBalance));
+
+    // place a bet of 10 chips using CrashController
+    console.log('\n🎲 Running game controller checks');
+    const betResp = await crashController.updatePlayerBalance({ userId: user._id.toString(), amount: 10 });
+    console.log('➡️  CrashController bet response:', betResp);
+    const payoutResp = await crashController.updatePlayerBalance({ userId: user._id.toString(), amount: -25 });
+    console.log('⬅️  CrashController payout response:', payoutResp);
+
+    // run slot controller to simulate a full round (bet + payout indirectly inside)
+    const slotBetResp = await slotController.saveSlotRound({
+        serverSeed: 'dummy',
+        clientSeed: 'dummy',
+        roundNumber: 1,
+        userId: user._id.toString(),
+        betAmount: 5,
+        rewardData: [],
+        payout: 2,
+        roundResult: {}
+    });
+    console.log('🎰 SlotController round save response:', slotBetResp);
+
+    // mines: deduct 10 then credit 20
+    const minesBet = await minesController.updateMyBalance({ userId: user._id.toString(), betAmount: 10, type: 'bet' });
+    console.log('💣 MinesController bet response:', minesBet);
+    const minesWin = await minesController.updateMyBalance({ userId: user._id.toString(), betAmount: -20 });
+    console.log('💰 MinesController win response:', minesWin);
+
+    // dice: simulate round via saveDiceRound helper
+    const diceRound = await diceController.saveDiceRound({
+        roundNumber: 1,
+        userId: user._id.toString(),
+        betAmount: 5,
+        coinType: 'CHIPS',
+        difficulty: 'easy',
+        isOver: true,
+        payout: 1.5,
+        fairData: {},
+        roundResult: 'win',
+        serverSeed: 'seed',
+        clientSeed: 'seed'
+    });
+    console.log('🎲 DiceController round save response:', diceRound);
+
+    // plinko: similar savePlinkoRound
+    const plinkoRound = await plinkoController.savePlinkoRound({
+        roundNumber: 1,
+        userId: user._id.toString(),
+        betAmount: 5,
+        coinType: 'CHIPS',
+        payout: 2,
+        result: {},
+        serverSeed: 'seed',
+        clientSeed: 'seed'
+    });
+    console.log('📍 PlinkoController round response:', plinkoRound);
+
+    // turtle race - deduct and credit via updateMyBalance
+    const turtleBet = await turtleController.updateMyBalance({ userId: user._id.toString(), balance: 10 });
+    console.log('🐢 TurtleController bet response:', turtleBet);
+    const turtleWin = await turtleController.updateMyBalance({ userId: user._id.toString(), balance: -15 });
+    console.log('🐢 TurtleController win response:', turtleWin);
+
+    user = await models.userModel.findById(user._id);
+    console.log('✅ Final demo balance:', JSON.stringify(user.demoBalance));
+
+    mongoose.disconnect();
+    console.log('🛑 Test complete; disconnected.');
+}
+
+main().catch(err => {
+    console.error('🔥 Smoke test failed:', err);
+    process.exit(1);
+});
