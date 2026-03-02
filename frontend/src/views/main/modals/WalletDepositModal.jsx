@@ -15,7 +15,7 @@ import InfoIcon from '@mui/icons-material/Info';
 import axios from 'axios';
 import CryptoDepositModal from './CryptoDepositModal';
 import CryptoWithdrawModal from './CryptoWithdrawModal';
-import { fetchDemoBalance } from '../../../redux/walletSlice';
+import { fetchDemoBalance, simulateDemoDeposit } from '../../../redux/walletSlice';
 
 // Add CSS animations - inject only once
 if (!document.getElementById('wallet-modal-animations')) {
@@ -192,6 +192,7 @@ export default function WalletDepositModal({ open, onClose }) {  const API_URL =
   const [address, setAddress] = useState('');
   const [cryptoAmount, setCryptoAmount] = useState('');
   const [generatedAddress, setGeneratedAddress] = useState('');
+  const [demoDepositAmount, setDemoDepositAmount] = useState('100');
 
   // Withdraw fields
   const [withdrawType, setWithdrawType] = useState('crypto'); // 'crypto' or 'fiat'
@@ -271,6 +272,25 @@ export default function WalletDepositModal({ open, onClose }) {  const API_URL =
       updatedUser.demoChipsBalance = result.payload.data.chips !== undefined ? result.payload.data.chips : (result.payload.data || 0);
       updatedUser.demoMode = result.payload.demoMode;
       dispatch({ type: 'SET_USERDATA', data: updatedUser });
+    }
+  };
+
+  const handleSimulateDemoDeposit = async () => {
+    if (!demoDepositAmount) {
+      alert('Please enter amount');
+      return;
+    }
+    if (userId) {
+      const result = await dispatch(
+        simulateDemoDeposit({ userId, coinType: 'CHIPS', chain: '', amount: parseFloat(demoDepositAmount) })
+      );
+      // sync into auth so header/games update immediately
+      if (result?.payload?.newBalance) {
+        const updatedUser = { ...auth.userData };
+        updatedUser.demoChipsBalance = result.payload.newBalance.chips !== undefined ? result.payload.newBalance.chips : (result.payload.newBalance || 0);
+        dispatch({ type: 'SET_USERDATA', data: updatedUser });
+      }
+      setDemoDepositAmount('100');
     }
   };
 
@@ -810,7 +830,23 @@ export default function WalletDepositModal({ open, onClose }) {  const API_URL =
           {tab === 4 && (
             <Box>
               <Typography variant="h6" sx={{ mb: 3, fontWeight: 'bold', color: '#BA6AFF' }}>Demo Balance</Typography>
-              <Box sx={{ mb: 2 }}>
+              <Box sx={{ mb: 2, display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <TextField
+                  label="Amount"
+                  type="number"
+                  size="small"
+                  value={demoDepositAmount}
+                  onChange={(e) => setDemoDepositAmount(e.target.value)}
+                  disabled={wallet.loading}
+                  sx={{ width: '120px' }}
+                />
+                <Button
+                  sx={primaryButtonStyle}
+                  onClick={handleSimulateDemoDeposit}
+                  disabled={wallet.loading}
+                >
+                  {wallet.loading ? '⏳ Crediting...' : '➕ Credit Demo'}
+                </Button>
                 <Button sx={primaryButtonStyle} onClick={handleRefreshDemoBalance} disabled={wallet.loading}>
                   {wallet.loading ? '⏳ Refreshing...' : '🔄 Refresh Demo Balance'}
                 </Button>
