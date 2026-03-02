@@ -232,20 +232,6 @@ export default function WalletDepositModal({ open, onClose }) {  const API_URL =
     }
   }, [auth?.userData?.email]);
 
-  // Sync demo balance/mode from wallet slice into auth state so header/games see the update
-  // When fetchDemoBalance completes, mirror the result to authentication.userData so
-  // the header's demo balance display and game components immediately reflect changes
-  useEffect(() => {
-    if (auth?.userData && (wallet.demoBalance || wallet.demoMode !== undefined)) {
-      const updated = { ...auth.userData };
-      if (wallet.demoBalance) {
-        updated.demoBalance = wallet.demoBalance;
-      }
-      updated.demoMode = wallet.demoMode;
-      dispatch({ type: 'SET_USERDATA', data: updated });
-    }
-  }, [wallet.demoBalance, wallet.demoMode, auth?.userData, dispatch]);
-
   const handleClose = () => {
     setMessage(null);
     setFiatAmount('');
@@ -271,6 +257,19 @@ export default function WalletDepositModal({ open, onClose }) {  const API_URL =
       setHistory([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRefreshDemoBalance = async () => {
+    if (!userId) return;
+    const result = await dispatch(fetchDemoBalance(userId));
+    // After fetching from server, sync the new demo balance into auth state so
+    // the header and games immediately see the update
+    if (result?.payload?.data) {
+      const updatedUser = { ...auth.userData };
+      updatedUser.demoBalance = result.payload.data;
+      updatedUser.demoMode = result.payload.demoMode;
+      dispatch({ type: 'SET_USERDATA', data: updatedUser });
     }
   };
 
@@ -811,7 +810,7 @@ export default function WalletDepositModal({ open, onClose }) {  const API_URL =
             <Box>
               <Typography variant="h6" sx={{ mb: 3, fontWeight: 'bold', color: '#BA6AFF' }}>Demo Balance</Typography>
               <Box sx={{ mb: 2 }}>
-                <Button sx={primaryButtonStyle} onClick={() => dispatch(fetchDemoBalance(userId))} disabled={wallet.loading}>
+                <Button sx={primaryButtonStyle} onClick={handleRefreshDemoBalance} disabled={wallet.loading}>
                   {wallet.loading ? '⏳ Refreshing...' : '🔄 Refresh Demo Balance'}
                 </Button>
               </Box>
