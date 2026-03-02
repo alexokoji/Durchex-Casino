@@ -214,7 +214,7 @@ const BlackjackGame = () => {
     // const { showLoading, hideLoading } = useContext(LoadingContext);
 
     const authData = useSelector((state) => state.authentication);
-    const currency = authData.isAuth ? authData.userData.currency : '';
+    const currency = { coinType: 'CHIPS', type: 'chip' };
 
     const setting = { min: 1, max: 1000 };
     const [betAmount, setBetAmount] = useState(setting.min);
@@ -261,7 +261,7 @@ const BlackjackGame = () => {
                             <Typography className={classes.CommonLabel}>Bet Amount</Typography>
                             <Box className={classes.InputBackground}>
                                 <Box className={classes.InputBox}>
-                                    <img className={classes.CurrencyIcon} src={`/assets/images/coins/${currency?.coinType?.toLowerCase()}.png`} alt={currency.coinType} />
+                                    <img className={classes.CurrencyIcon} src="/assets/images/coins/chips.png" alt="chips" />
                                     <input type="number" value={betAmount} onChange={(e) => setBetAmount(e.target.value)} className={classes.BetAmountInput} />
                                     <Box className={classes.AmountActionBox}>
                                         <Button onClick={() => handleAmountAction(0)} className={classes.AmountActionButton}>1/2</Button>

@@ -425,7 +425,7 @@ const Mines = () => {
 
     const { addToast } = useToasts();
     const authData = useSelector((state) => state.authentication);
-    const currency = authData.isAuth ? authData.userData.currency : '';
+    const currency = { coinType: 'CHIPS', type: 'chip' };
     const settingData = useSelector((state) => state.settingOption);
     const [activeRound, setActiveRound] = useState();
 

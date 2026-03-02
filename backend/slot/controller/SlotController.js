@@ -29,24 +29,30 @@ exports.saveSlotRound = async (data) => {
 
         // Use demoBalance if in demo mode, otherwise use regular balance
         const balanceData = userData.demoMode ? (userData.demoBalance || { data: [] }) : userData.balance;
-        const currencyIndex = balanceData.data.findIndex(item => (item.coinType === userData.currency.coinType && item.type === userData.currency.type));
+        
+        // For unified chips system: use first available balance entry
+        if (!balanceData.data || balanceData.data.length === 0) {
+            return { status: false, message: 'No balance available' };
+        }
+
+        const currencyIndex = 0; // Use first available currency as chips
         if (balanceData.data[currencyIndex].balance < Number(data.betAmount)) {
             return { status: false, message: 'Not enough balance' };
         }
         else {
-            SocketManager.requestWargerAmountUpdate({ userId: userId, amount: betAmount, coinType: userData.currency });
+            // unified chips currency
+            //const coinInfo = balanceData.data[currencyIndex];
+            SocketManager.requestWargerAmountUpdate({ userId: userId, amount: betAmount, coinType: { coinType: 'CHIPS' } });
+            
             const roundData = await new models.slotRoundModel({
                 roundNumber: roundNumber,
                 userId: userId,
                 betAmount: betAmount,
-                coinType: userData.currency,
-                payout: payout,
-                rewardData: rewardData,
-                roundResult: roundResult,
-                serverSeed: serverSeed,
+                coinType: 'CHIPS',
                 clientSeed: clientSeed,
                 roundDate: new Date()
             }).save();
+            
             const winAmount = Number(betAmount) * (Number(payout) - 1);
             if (winAmount > 0) {
                 balanceData.data[currencyIndex].balance = balanceData.data[currencyIndex].balance + winAmount;

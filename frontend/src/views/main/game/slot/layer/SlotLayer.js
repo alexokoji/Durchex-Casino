@@ -373,13 +373,43 @@ export class SlotLayer extends BaseLayer {
 
     updateBalanceDisplay() {
         if (!this.balanceText || !this.authData) return;
-        const allowed = ['USDT','ZELO'];
-        let amount = '0.00';
-        if (this.authData.balanceData && Array.isArray(this.authData.balanceData)) {
-            const bal = this.authData.balanceData.find(b => allowed.includes(b.coinType));
-            if (bal) amount = Number(bal.balance || 0).toFixed(2);
+        let chipAmount = '0.00';
+
+        // Priority 1: If in demo mode AND demoBalance exists, use it
+        if (this.authData.userData && this.authData.userData.demoMode && this.authData.userData.demoBalance !== undefined) {
+            try {
+                const demoBalance = this.authData.userData.demoBalance;
+                if (typeof demoBalance === 'number') {
+                    chipAmount = Number(demoBalance).toFixed(2);
+                } else if (demoBalance.data && Array.isArray(demoBalance.data)) {
+                    // Sum all balances as chips
+                    const sum = demoBalance.data.reduce((acc, b) => {
+                        if (!b) return acc;
+                        const val = parseFloat(b.balance || 0);
+                        return acc + (isNaN(val) ? 0 : val);
+                    }, 0);
+                    chipAmount = sum.toFixed(2);
+                }
+            } catch (e) {
+                chipAmount = '0.00';
+            }
         }
-        this.balanceText.text = `Balance: ${amount}`;
+        // Priority 2: Use real balance from userData.balanceData
+        else if (this.authData.balanceData && Array.isArray(this.authData.balanceData)) {
+            try {
+                // Sum all balances as chips (no filtering by coin type)
+                const sum = this.authData.balanceData.reduce((acc, b) => {
+                    if (!b) return acc;
+                    const val = parseFloat(b.balance || 0);
+                    return acc + (isNaN(val) ? 0 : val);
+                }, 0);
+                chipAmount = sum.toFixed(2);
+            } catch (e) {
+                chipAmount = '0.00';
+            }
+        }
+
+        this.balanceText.text = `Balance: ${chipAmount} Chips`;
     }
 
     getResult() {

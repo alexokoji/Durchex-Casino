@@ -278,7 +278,8 @@ const SlotGame = () => {
     const { addToast } = useToasts();
 
     const authData = useSelector((state) => state.authentication);
-    const currency = authData.isAuth ? authData.userData.currency : '';
+    // simplified: use unified chip currency for in-game operations
+    const currency = { coinType: 'CHIPS', type: 'chip' };
     const settingData = useSelector((state) => state.settingOption);
 
     const setting = { min: 1, max: 1000 };
@@ -463,7 +464,7 @@ const SlotGame = () => {
                             <Typography className={classes.CommonLabel}>Bet Amount</Typography>
                             <Box className={classes.InputBackground}>
                                 <Box className={classes.InputBox}>
-                                    <img className={classes.CurrencyIcon} src={`/assets/images/coins/${currency?.coinType?.toLowerCase()}.png`} alt={currency.coinType} />
+                                    <img className={classes.CurrencyIcon} src="/assets/images/coins/chips.png" alt="chips" />
                                     <input disabled={playLoading} type="number" value={betAmount} onChange={(e) => setBetAmount(e.target.value)} className={classes.BetAmountInput} />
                                     <Box className={classes.AmountActionBox}>
                                         <Button disabled={playLoading} onClick={() => handleAmountAction(0)} className={classes.AmountActionButton}>1/2</Button>

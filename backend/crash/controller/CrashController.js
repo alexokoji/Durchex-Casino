@@ -49,21 +49,28 @@ exports.updatePlayerBalance = async (data, warger = false) => {
 
         // Use demoBalance if in demo mode, otherwise use regular balance
         const balanceData = userData.demoMode ? (userData.demoBalance || { data: [] }) : userData.balance;
-        const currencyIndex = balanceData.data.findIndex(item => (item.coinType === userData.currency.coinType && item.type === userData.currency.type));
         const amountNum = Number(amount) || 0;
+
+        // For unified chips system: use first available balance entry
+        if (!balanceData.data || balanceData.data.length === 0) {
+            return { status: false, message: 'No balance available' };
+        }
+
+        const currencyIndex = 0; // Use first available currency as chips
 
         // If positive amount => deduct from user (placing bet)
         if (amountNum > 0) {
             if (balanceData.data[currencyIndex].balance < amountNum)
                 return { status: false, message: 'Not enough balance' };
 
-            if (warger)
-                SocketManager.requestWargerAmountUpdate({ userId: userId, amount: amountNum, coinType: userData.currency });
+            if (warger) {
+                const coinInfo = balanceData.data[currencyIndex];
+                SocketManager.requestWargerAmountUpdate({ userId: userId, amount: amountNum, coinType: coinInfo });
+            }
 
             balanceData.data[currencyIndex].balance = balanceData.data[currencyIndex].balance - amountNum;
             if (userData.demoMode) {
                 await models.userModel.findOneAndUpdate({ _id: userId }, { demoBalance: balanceData });
-                // keep userData object in sync for the socket notification
                 userData.demoBalance = balanceData;
             } else {
                 await models.userModel.findOneAndUpdate({ _id: userId }, { balance: balanceData });
@@ -105,7 +112,7 @@ exports.updatePlayerBalance = async (data, warger = false) => {
 
 exports.createCrashBetHistory = async (data) => {
     try {
-        const { userId, betAmount, coinType, roundId, seed } = data;
+        const { userId, betAmount, /*coinType,*/ roundId, seed } = data;
         const exist = await models.crashBetHistoryModel.findOne({ crashRoundId: roundId, betUserId: userId });
         if (exist)
             return { status: false, message: 'Already saved' };
@@ -115,7 +122,7 @@ exports.createCrashBetHistory = async (data) => {
             betUserId: userId,
             payout: 0,
             betAmount,
-            coinType,
+            coinType: 'CHIPS',
             seed
         }).save();
         return { status: true, data: response };

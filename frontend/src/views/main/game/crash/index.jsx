@@ -367,7 +367,8 @@ const CrashGame = () => {
     const pixiRef = useRef(null);
 
     const authData = useSelector((state) => state.authentication);
-    const currency = authData.isAuth ? authData.userData.currency : '';
+    // unified chips currency; we don't care about userData.currency anymore
+    const currency = { coinType: 'CHIPS', type: 'chip' };
     const settingData = useSelector((state) => state.settingOption);
 
     const [soundEvent, setSoundEvent] = useState(null);
@@ -615,13 +616,12 @@ const CrashGame = () => {
         let amount = 0;
         // eslint-disable-next-line
         betList.map((item) => {
-            if (item.coinType === currency.coinType) {
-                amount += Number(item.betAmount);
-            }
+            // show all entries as we're using single-chip currency
+            amount += Number(item.betAmount);
         });
         setTotalBetAmount(amount);
         // eslint-disable-next-line
-    }, [betList, currency]);
+    }, [betList]); // removed currency dependency because all bets show
 
     useEffect(() => {
         if (settingData.sound && settingData.backgroundSound) {
@@ -749,7 +749,7 @@ const CrashGame = () => {
         const request = {
             userId: authData.userData._id,
             betAmount: betAmount,
-            coinType: currency,
+            coinType: { coinType: 'CHIPS' },
             payout: cashoutAt
         };
         CrashSocketManager.getInstance().joinBet(request);
@@ -788,7 +788,7 @@ const CrashGame = () => {
                             <Typography className={classes.CommonLabel}>Bet Amount</Typography>
                             <Box className={classes.InputBackground}>
                                 <Box className={classes.InputBox}>
-                                    <img className={classes.CurrencyIcon} src={`/assets/images/coins/${currency?.coinType?.toLowerCase()}.png`} alt={currency.coinType} />
+                                    <img className={classes.CurrencyIcon} src="/assets/images/coins/chips.png" alt="chips" />
                                     <input disabled={playLoading} type="number" value={betAmount} onChange={(e) => setBetAmount(e.target.value)} className={classes.BetAmountInput} />
                                     <Box className={classes.AmountActionBox}>
                                         <Button disabled={playLoading} onClick={() => handleAmountAction(0)} className={classes.AmountActionButton}>1/2</Button>
@@ -861,7 +861,7 @@ const CrashGame = () => {
                                     <span>{betList.length}</span>
                                 </Box>
                                 <Box className={classes.TotalBalanceBox}>
-                                    <img className={classes.CurrencyIcon} src={`/assets/images/coins/${currency?.coinType?.toLowerCase()}.png`} alt={currency.coinType} />
+                                    <img className={classes.CurrencyIcon} src="/assets/images/coins/chips.png" alt="chips" />
                                     <span>{totalBetAmount}</span>
                                 </Box>
                             </Box>
@@ -873,7 +873,7 @@ const CrashGame = () => {
                                                 <Box className={classes.UserNameBox}>{item.userNickName}</Box>
                                                 <Box className={classes.CashoutBox}>{item.isCashout ? item.cashoutAt.toFixed(2) : '-'}</Box>
                                                 <Box className={classes.ListBetAmountBox}>
-                                                    <img className={classes.CurrencyIcon} src={`/assets/images/coins/${item.coinType.toLowerCase()}.png`} alt={item.coinType} />
+                                                    <img className={classes.CurrencyIcon} src="/assets/images/coins/chips.png" alt="chips" />
                                                     <span>{item.isCashout ? (item.profit).toFixed(4) : Number(item.betAmount).toFixed(4)}</span>
                                                 </Box>
                                             </Box>
