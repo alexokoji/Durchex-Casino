@@ -66,7 +66,7 @@ async function main() {
     const payoutResp = await crashController.updatePlayerBalance({ userId: user._id.toString(), amount: -25 });
     console.log('⬅️  CrashController payout response:', payoutResp);
 
-    // optional: also run slot controller
+    // run slot controller to simulate a full round (bet + payout indirectly inside)
     const slotBetResp = await slotController.saveSlotRound({
         serverSeed: 'dummy',
         clientSeed: 'dummy',
@@ -78,6 +78,50 @@ async function main() {
         roundResult: {}
     });
     console.log('🎰 SlotController round save response:', slotBetResp);
+
+    // mines: deduct 10 then credit 20
+    const minesBet = await require('../backend/mines/controller/MinesController').updateMyBalance({ userId: user._id.toString(), betAmount: 10, type: 'bet' });
+    console.log('💣 MinesController bet response:', minesBet);
+    const minesWin = await require('../backend/mines/controller/MinesController').updateMyBalance({ userId: user._id.toString(), betAmount: -20 });
+    console.log('💰 MinesController win response:', minesWin);
+
+    // dice: simulate round via saveDiceRound helper
+    const diceController = require('../backend/dice/controller/DiceController');
+    const diceRound = await diceController.saveDiceRound({
+        roundNumber: 1,
+        userId: user._id.toString(),
+        betAmount: 5,
+        coinType: 'CHIPS',
+        difficulty: 'easy',
+        isOver: true,
+        payout: 1.5,
+        fairData: {},
+        roundResult: 'win',
+        serverSeed: 'seed',
+        clientSeed: 'seed'
+    });
+    console.log('🎲 DiceController round save response:', diceRound);
+
+    // plinko: similar savePlinkoRound
+    const plinkoController = require('../backend/plinko/controller/PlinkoController');
+    const plinkoRound = await plinkoController.savePlinkoRound({
+        roundNumber: 1,
+        userId: user._id.toString(),
+        betAmount: 5,
+        coinType: 'CHIPS',
+        payout: 2,
+        result: {},
+        serverSeed: 'seed',
+        clientSeed: 'seed'
+    });
+    console.log('📍 PlinkoController round response:', plinkoRound);
+
+    // turtle race - deduct and credit via updateMyBalance
+    const turtle = require('../backend/turtlerace/controllers/TurtleController');
+    const turtleBet = await turtle.updateMyBalance({ userId: user._id.toString(), balance: 10 });
+    console.log('🐢 TurtleController bet response:', turtleBet);
+    const turtleWin = await turtle.updateMyBalance({ userId: user._id.toString(), balance: -15 });
+    console.log('🐢 TurtleController win response:', turtleWin);
 
     user = await models.userModel.findById(user._id);
     console.log('✅ Final demo balance:', JSON.stringify(user.demoBalance));
