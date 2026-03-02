@@ -130,12 +130,10 @@ const walletSlice = createSlice({
       })
       .addCase(fetchDemoBalance.fulfilled, (state, action) => {
         state.loading = false;
-        // keep only USDT/ZELO entries
-        const allowed = ['USDT','ZELO'];
+        // store full demo balance data (chips may be present)
+        // previously we filtered to USDT/ZELO only, which removed chips entries
         const data = action.payload.data;
-        state.demoBalance = Array.isArray(data?.data)
-            ? { data: data.data.filter(b => allowed.includes(b.coinType)) }
-            : data;
+        state.demoBalance = Array.isArray(data?.data) ? { data: data.data } : data;
         state.demoMode = action.payload.demoMode;
       })
       .addCase(fetchDemoBalance.rejected, (state, action) => {
@@ -168,11 +166,8 @@ const walletSlice = createSlice({
       .addCase(simulateDemoDeposit.fulfilled, (state, action) => {
         state.loading = false;
         if (action.payload?.newBalance) {
-          const allowed = ['USDT','ZELO'];
           const nb = action.payload.newBalance;
-          state.demoBalance = Array.isArray(nb?.data)
-              ? { data: nb.data.filter(b => allowed.includes(b.coinType)) }
-              : nb;
+          state.demoBalance = Array.isArray(nb?.data) ? { data: nb.data } : nb;
         }
         state.success = 'Demo deposit simulated successfully';
       })

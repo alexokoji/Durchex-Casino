@@ -80,13 +80,13 @@ async function main() {
     console.log('🎰 SlotController round save response:', slotBetResp);
 
     // mines: deduct 10 then credit 20
-    const minesBet = await require('../backend/mines/controller/MinesController').updateMyBalance({ userId: user._id.toString(), betAmount: 10, type: 'bet' });
+    const minesBet = await require('../mines/controller/MinesController').updateMyBalance({ userId: user._id.toString(), betAmount: 10, type: 'bet' });
     console.log('💣 MinesController bet response:', minesBet);
-    const minesWin = await require('../backend/mines/controller/MinesController').updateMyBalance({ userId: user._id.toString(), betAmount: -20 });
+    const minesWin = await require('../mines/controller/MinesController').updateMyBalance({ userId: user._id.toString(), betAmount: -20 });
     console.log('💰 MinesController win response:', minesWin);
 
     // dice: simulate round via saveDiceRound helper
-    const diceController = require('../backend/dice/controller/DiceController');
+    const diceController = require('../dice/controller/DiceController');
     const diceRound = await diceController.saveDiceRound({
         roundNumber: 1,
         userId: user._id.toString(),
@@ -103,7 +103,7 @@ async function main() {
     console.log('🎲 DiceController round save response:', diceRound);
 
     // plinko: similar savePlinkoRound
-    const plinkoController = require('../backend/plinko/controller/PlinkoController');
+    const plinkoController = require('../plinko/controller/PlinkoController');
     const plinkoRound = await plinkoController.savePlinkoRound({
         roundNumber: 1,
         userId: user._id.toString(),
@@ -117,7 +117,7 @@ async function main() {
     console.log('📍 PlinkoController round response:', plinkoRound);
 
     // turtle race - deduct and credit via updateMyBalance
-    const turtle = require('../backend/turtlerace/controllers/TurtleController');
+    const turtle = require('../turtlerace/controllers/TurtleController');
     const turtleBet = await turtle.updateMyBalance({ userId: user._id.toString(), balance: 10 });
     console.log('🐢 TurtleController bet response:', turtleBet);
     const turtleWin = await turtle.updateMyBalance({ userId: user._id.toString(), balance: -15 });

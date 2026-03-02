@@ -272,11 +272,14 @@ curl -X POST http://localhost:5000/api/v0/auth/getAuthData \
 2. Select **Fiat Deposit** or **Crypto Deposit**
 3. Enter amount (e.g., 50)
 4. **For smoke test**: Simulate the deposit by calling Step A4 again
-5. Refresh browser and verify balance increased
+5. Click **🔄 Refresh Demo Balance** in the deposit modal. You should see
+   the chips value update immediately in the modal and the header –
+   no full page reload required anymore thanks to data syncing.
 
 ✅ **Verify**: 
 - New demo balance = 150 + 50 = **200 Chips**
-- UI reflects the update after refresh
+- Header and wallet modal both show the updated amount right after refresh
+- You can also navigate to a game and confirm the amount is available there
 
 ---
 

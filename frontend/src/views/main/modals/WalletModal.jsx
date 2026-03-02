@@ -185,6 +185,23 @@ const WalletModal = ({ open, setOpen }) => {
     // Causing a re-render with updated balance values
   }, [authentication?.userData?.demoBalance, authentication?.userData?.balance]);
 
+  // Whenever the wallet slice gets new demo data or demoMode toggles,
+  // mirror that information into authentication.userData so the header
+  // and game components (which read authData) stay in sync. Without
+  // this, pressing "Refresh Demo Balance" only updates wallet.demoBalance
+  // and the header would still show the old amount, making it look like
+  // nothing happened and blocking bets in demo mode.
+  useEffect(() => {
+    if (authentication?.userData) {
+      const updatedUser = { ...authentication.userData };
+      if (wallet.demoBalance) {
+        updatedUser.demoBalance = wallet.demoBalance;
+      }
+      updatedUser.demoMode = wallet.demoMode;
+      dispatch({ type: 'SET_USERDATA', data: updatedUser });
+    }
+  }, [wallet.demoBalance, wallet.demoMode, authentication?.userData, dispatch]);
+
   const handleGetDepositAddress = async () => {
     if (userId) {
       await dispatch(fetchDepositAddress({ userId, coinType, chain: 'ethereum', tokenType }));

@@ -95,6 +95,19 @@ const WalletModal = ({ open, setOpen }) => {
     }
   }, [wallet.success, wallet.error, dispatch]);
 
+  // Sync demo balance/mode from wallet slice into auth state so the
+  // header and any game views will immediately reflect changes.
+  useEffect(() => {
+    if (authentication?.userData) {
+      const updated = { ...authentication.userData };
+      if (wallet.demoBalance) {
+        updated.demoBalance = wallet.demoBalance;
+      }
+      updated.demoMode = wallet.demoMode;
+      dispatch({ type: 'SET_USERDATA', data: updated });
+    }
+  }, [wallet.demoBalance, wallet.demoMode, authentication?.userData, dispatch]);
+
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
   };
