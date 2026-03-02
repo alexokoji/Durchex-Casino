@@ -2,6 +2,7 @@
 // rates can be adjusted or pulled from config/market data later
 
 const rates = {
+  CHIPS: 1,    // direct pass‑through
   USDT: 1,     // 1 USDT == 1 chip
   ZELO: 0.5,   // example rate: 2 chips per ZELO
   ETH: 2000,   // 1 ETH -> 2000 chips (just illustrative value)
