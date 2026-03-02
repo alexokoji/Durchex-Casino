@@ -70,6 +70,11 @@ const Config = {
         getDemoBalance: '/v0/payment/demo/balance',
         toggleDemoMode: '/v0/payment/demo/toggle',
         simulateDemoDeposit: '/v0/payment/demo/simulate-deposit',
+        // Fiat/Flutterwave Endpoints
+        flutterwaveInitialize: '/v0/payment/flutterwave/initialize',
+        flutterwaveVerify: '/v0/payment/flutterwave/verify',
+        flutterwaveHistory: '/v0/payment/flutterwave/history',
+        flutterwaveWithdraw: '/v0/payment/flutterwave/withdraw',
         // Withdrawal Endpoints
         processWithdrawal: '/v0/payment/withdrawal/process',
         getWithdrawalHistory: '/v0/payment/withdrawal/history',

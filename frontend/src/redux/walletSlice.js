@@ -74,6 +74,55 @@ export const processWithdrawal = createAsyncThunk(
   }
 );
 
+// Flutterwave-specific thunks
+export const initializeFlutterwave = createAsyncThunk(
+  'wallet/initializeFlutterwave',
+  async ({ userId, amount, currency, customerEmail, customerPhone, customerName, paymentMethod }, { rejectWithValue }) => {
+    try {
+      const response = await walletApi.initializeFlutterwave(userId, amount, currency, customerEmail, customerPhone, customerName, paymentMethod);
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to initialize payment');
+    }
+  }
+);
+
+export const verifyFlutterwave = createAsyncThunk(
+  'wallet/verifyFlutterwave',
+  async (reference, { rejectWithValue }) => {
+    try {
+      const response = await walletApi.verifyFlutterwave(reference);
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to verify payment');
+    }
+  }
+);
+
+export const fetchFlutterwaveHistory = createAsyncThunk(
+  'wallet/fetchFlutterwaveHistory',
+  async ({ userId, type = 'deposit', limit = 50, skip = 0 }, { rejectWithValue }) => {
+    try {
+      const response = await walletApi.getFlutterwaveHistory(userId, type, limit, skip);
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch payment history');
+    }
+  }
+);
+
+export const initiateFlutterwaveWithdrawal = createAsyncThunk(
+  'wallet/initiateFlutterwaveWithdrawal',
+  async ({ userId, amount, accountNumber, accountBank, bankCode, currency, narration }, { rejectWithValue }) => {
+    try {
+      const response = await walletApi.initiateFlutterwaveWithdrawal(userId, amount, accountNumber, accountBank, bankCode, currency, narration);
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to initiate withdrawal');
+    }
+  }
+);
+
 export const fetchWithdrawalHistory = createAsyncThunk(
   'wallet/fetchWithdrawalHistory',
   async ({ userId, limit = 10, skip = 0 }, { rejectWithValue }) => {
@@ -249,6 +298,68 @@ const walletSlice = createSlice({
         state.currentWithdrawal = action.payload.data;
       })
       .addCase(fetchWithdrawalStatus.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      });
+
+    // Flutterwave initialize
+    builder
+      .addCase(initializeFlutterwave.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(initializeFlutterwave.fulfilled, (state, action) => {
+        state.loading = false;
+        // the frontend component handles redirecting, nothing to stash here
+        state.success = 'Payment initialized';
+      })
+      .addCase(initializeFlutterwave.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      });
+
+    // Flutterwave verify
+    builder
+      .addCase(verifyFlutterwave.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(verifyFlutterwave.fulfilled, (state, action) => {
+        state.loading = false;
+        const data = action.payload.data || {};
+        state.success = data.paymentStatus === 'completed' ? 'Payment successful' : 'Payment not completed';
+      })
+      .addCase(verifyFlutterwave.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      });
+
+    // Flutterwave history
+    builder
+      .addCase(fetchFlutterwaveHistory.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchFlutterwaveHistory.fulfilled, (state, action) => {
+        state.loading = false;
+        state.depositHistory = action.payload.data || [];
+      })
+      .addCase(fetchFlutterwaveHistory.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      });
+
+    // Flutterwave withdrawal
+    builder
+      .addCase(initiateFlutterwaveWithdrawal.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(initiateFlutterwaveWithdrawal.fulfilled, (state, action) => {
+        state.loading = false;
+        state.success = 'Withdrawal initiated';
+      })
+      .addCase(initiateFlutterwaveWithdrawal.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

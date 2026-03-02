@@ -61,6 +61,63 @@ const walletApi = {
     }
   },
 
+  // Flutterwave / Fiat
+  initializeFlutterwave: async (userId, amount, currency, customerEmail, customerPhone, customerName, paymentMethod = 'card') => {
+    try {
+      const response = await apiClient.post(Config.request.flutterwaveInitialize, {
+        userId,
+        amount,
+        currency,
+        paymentMethod,
+        customerEmail,
+        customerPhone,
+        customerName
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error initializing Flutterwave payment:', error);
+      throw error;
+    }
+  },
+
+  verifyFlutterwave: async (reference) => {
+    try {
+      const response = await apiClient.post(Config.request.flutterwaveVerify, { reference });
+      return response.data;
+    } catch (error) {
+      console.error('Error verifying Flutterwave payment:', error);
+      throw error;
+    }
+  },
+
+  getFlutterwaveHistory: async (userId, type = 'deposit', limit = 50, skip = 0) => {
+    try {
+      const response = await apiClient.post(Config.request.flutterwaveHistory, { userId, type, limit, skip });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching Flutterwave history:', error);
+      throw error;
+    }
+  },
+
+  initiateFlutterwaveWithdrawal: async (userId, amount, accountNumber, accountBank, bankCode, currency, narration) => {
+    try {
+      const response = await apiClient.post(Config.request.flutterwaveWithdraw, {
+        userId,
+        amount,
+        accountNumber,
+        accountBank,
+        bankCode,
+        currency,
+        narration
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error initiating Flutterwave withdrawal:', error);
+      throw error;
+    }
+  },
+
   // Deposits
   getOrCreateDepositAddress: async (userId, coinType, chain, tokenType) => {
     try {

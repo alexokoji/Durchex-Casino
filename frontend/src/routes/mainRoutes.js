@@ -22,6 +22,7 @@ const Affiliate = Loadable(lazy(() => import("views/main/affiliate")));
 const Slot = Loadable(lazy(() => import("views/main/game/slot")));
 const Crash = Loadable(lazy(() => import("views/main/game/crash")));
 const Blackjack = Loadable(lazy(() => import("views/main/game/blackjack")));
+const PaymentCallback = Loadable(lazy(() => import("views/main/PaymentCallback")));
 const Tournament = Loadable(lazy(() => import("views/main/tournament")));
 const Security = Loadable(lazy(() => import("views/main/help/Security")));
 const HowToSetup = Loadable(lazy(() => import("views/main/help/Security/2FaAuth/HowToSetup")));
@@ -49,6 +50,10 @@ const MainRoutes = [{
     path: '/',
     element: <MainLayout />,
     children: [
+        {
+            path: 'payment/callback',
+            element: <PaymentCallback />
+        },
         {
             path: 'app',
             element: <AppLayout />,
