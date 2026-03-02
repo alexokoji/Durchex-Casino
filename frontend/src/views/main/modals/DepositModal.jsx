@@ -59,6 +59,12 @@ export default function DepositModal({ open, onClose, initialTab = 'fiat' }) {
         currency: fiatCurrency,
         paymentMethod: 'flutterwave'
       });
+      // redirect user to payment gateway if link provided
+      const link = res?.data?.paymentLink || res?.data?.data?.paymentLink || res?.data?.data?.authorizationUrl;
+      if (link) {
+        window.location.href = link;
+        return; // keep modal open until redirect happens
+      }
       setMessage({ type: 'success', text: res.data.message || 'Deposit created' });
       setFiatAmount('');
     } catch (err) {
