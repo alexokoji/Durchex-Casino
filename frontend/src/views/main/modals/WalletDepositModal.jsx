@@ -223,7 +223,7 @@ export default function WalletDepositModal({ open, onClose }) {  const API_URL =
       // fetch demo balance when the Demo Balance tab is shown
       if (userId) dispatch(fetchDemoBalance(userId));
     }
-  }, [open, tab]);
+  }, [open, tab, userId, dispatch]);
 
   useEffect(() => {
     if (auth?.userData?.email) {
@@ -231,6 +231,20 @@ export default function WalletDepositModal({ open, onClose }) {  const API_URL =
       setWithdrawEmail(auth.userData.email);
     }
   }, [auth?.userData?.email]);
+
+  // Sync demo balance/mode from wallet slice into auth state so header/games see the update
+  // When fetchDemoBalance completes, mirror the result to authentication.userData so
+  // the header's demo balance display and game components immediately reflect changes
+  useEffect(() => {
+    if (auth?.userData && (wallet.demoBalance || wallet.demoMode !== undefined)) {
+      const updated = { ...auth.userData };
+      if (wallet.demoBalance) {
+        updated.demoBalance = wallet.demoBalance;
+      }
+      updated.demoMode = wallet.demoMode;
+      dispatch({ type: 'SET_USERDATA', data: updated });
+    }
+  }, [wallet.demoBalance, wallet.demoMode, auth?.userData, dispatch]);
 
   const handleClose = () => {
     setMessage(null);
