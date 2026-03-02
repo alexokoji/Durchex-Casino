@@ -183,21 +183,23 @@ exports.initiateDeposit = async (req, res) => {
             if (isNetworkError || isAuthError) {
                 console.warn(`⚠️ FALLBACK: Flutterwave ${isAuthError ? 'auth error' : 'unreachable'}, generating payment link..`);
                 
-                // Fallback: Generate a payment link
+                // Fallback: generate a mostly‑static Flutterwave checkout URL so the
+                // user still sees something rather than an internal dead page. this
+                // only applies when the external API call fails; ideally this path
+                // should never be reached in production when keys are valid.
                 fwTransaction.status = 'pending';
                 fwTransaction.statusDetails = isAuthError ? 'Pending - Auth error encountered' : 'Pending - Flutterwave unreachable';
                 fwTransaction.flutterwaveId = `FW-${fwSaved._id}`;
-                fwTransaction.flutterwaveLink = `https://checkout.flutterwave.com/v3/hosted?public_key=${process.env.FLUTTERWAVE_PUBLIC_KEY}&tx_ref=FW-${fwSaved._id}&amount=${amount}&currency=${currency}&customization[title]=PlayZelo&customization[description]=Deposit to your account&customer[email]=${email || user.email}`;
-                fwTransaction.flutterwaveLink = `https://casino.durchex.com/payment?tx_ref=FW-${fwSaved._id}`;  // Fallback internal link
+                fwTransaction.flutterwaveLink = `https://checkout.flutterwave.com/v3/hosted/pay?public_key=${process.env.FLUTTERWAVE_PUBLIC_KEY}&tx_ref=FW-${fwSaved._id}&amount=${amount}&currency=${currency}`;
                 await fwTransaction.save();
 
                 return res.json({
                     status: true,
-                    message: 'Payment link generated',
+                    message: 'Payment link generated (fallback)',
                     transactionId: fwSaved._id,
                     paymentLink: fwTransaction.flutterwaveLink,
                     fallback: true,
-                    note: isAuthError ? 'Please verify your Flutterwave API keys' : 'Test mode link'
+                    note: isAuthError ? 'Please verify your Flutterwave API keys' : 'Flutterwave unreachable'
                 });
             }
 

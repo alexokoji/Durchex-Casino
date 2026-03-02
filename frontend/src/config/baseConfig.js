@@ -1,6 +1,8 @@
 const isLocal = process.env.NODE_ENV === 'development';
 const pro = 'https://casino.durchex.com';
-const dev = 'http://localhost:5000';
+// backend listens on 5001 in development (
+// see backend/.env API_PORT)
+const dev = 'http://localhost:5001';
 const url = isLocal ? dev : pro;
 
 const Config = {
