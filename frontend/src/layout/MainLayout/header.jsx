@@ -653,23 +653,16 @@ const MainHeader = () => {
                                     <span className={classes.BalanceValue}>{(authData.userData && (authData.userData.balance || authData.userData.balance === 0)) ? Number(authData.userData.balance).toFixed(2) : '0.00'}</span>
                                 </Box>
                                 <Box className={classes.BalanceRow}>
-                                    <span className={classes.BalanceLabel}>Demo Balance</span>
+                                    <span className={classes.BalanceLabel}>Chips Balance</span>
                                     <span className={classes.BalanceValue}>{(() => {
                                         try {
-                                            if (!authData.userData || !authData.userData.demoBalance) return '0.00';
-                                            const demoBalance = authData.userData.demoBalance;
-                                            // If it's a number (old format), return directly
-                                            if (typeof demoBalance === 'number') {
-                                                return Number(demoBalance).toFixed(2);
+                                            if (!authData.userData) return '0.00';
+                                            // show demo or real chips depending on mode
+                                            if (authData.userData.demoMode && typeof authData.userData.demoChipsBalance === 'number') {
+                                                return Number(authData.userData.demoChipsBalance).toFixed(2);
                                             }
-                                            // If it's an object with data array (new format), sum all balances
-                                            if (demoBalance.data && Array.isArray(demoBalance.data)) {
-                                                const sum = demoBalance.data.reduce((acc, b) => {
-                                                    if (!b) return acc;
-                                                    const val = parseFloat(b.balance || 0);
-                                                    return acc + (isNaN(val) ? 0 : val);
-                                                }, 0);
-                                                return sum.toFixed(2);
+                                            if (!authData.userData.demoMode && typeof authData.userData.chipsBalance === 'number') {
+                                                return Number(authData.userData.chipsBalance).toFixed(2);
                                             }
                                             return '0.00';
                                         } catch (e) {

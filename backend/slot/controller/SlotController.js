@@ -26,52 +26,42 @@ exports.saveSlotRound = async (data) => {
     try {
         const { serverSeed, clientSeed, roundNumber, userId, betAmount, rewardData, payout, roundResult } = data;
         const userData = await models.userModel.findOne({ _id: userId });
+        if (!userData) return { status: false, message: 'User not found' };
 
-        // Use demoBalance if in demo mode, otherwise use regular balance
-        const balanceData = userData.demoMode ? (userData.demoBalance || { data: [] }) : userData.balance;
-        
-        // For unified chips system: locate CHIPS entry or fall back to first
-        if (!balanceData.data || balanceData.data.length === 0) {
-            return { status: false, message: 'No balance available' };
-        }
-
-        let currencyIndex = balanceData.data.findIndex(b => b.coinType === 'CHIPS' || b.currency === 'CHIPS');
-        if (currencyIndex === -1) {
-            currencyIndex = 0; // convert first entry to chips if nothing else
-            balanceData.data[currencyIndex].coinType = 'CHIPS';
-            balanceData.data[currencyIndex].currency = 'CHIPS';
-        }
-
-        if (balanceData.data[currencyIndex].balance < Number(data.betAmount)) {
+        // determine which numeric balance to use
+        const field = userData.demoMode ? 'demoChipsBalance' : 'chipsBalance';
+        let current = userData[field] || 0;
+        const betNum = Number(betAmount) || 0;
+        if (current < betNum) {
             return { status: false, message: 'Not enough balance' };
         }
-        else {
-            // unified chips currency
-            //const coinInfo = balanceData.data[currencyIndex];
-            SocketManager.requestWargerAmountUpdate({ userId: userId, amount: betAmount, coinType: { coinType: 'CHIPS' } });
-            
-            const roundData = await new models.slotRoundModel({
-                roundNumber: roundNumber,
-                userId: userId,
-                betAmount: betAmount,
-                coinType: 'CHIPS',
-                clientSeed: clientSeed,
-                roundDate: new Date()
-            }).save();
-            
-            const winAmount = Number(betAmount) * (Number(payout) - 1);
-            if (winAmount > 0) {
-                balanceData.data[currencyIndex].balance = balanceData.data[currencyIndex].balance + winAmount;
-                if (userData.demoMode) {
-                    await models.userModel.findOneAndUpdate({ _id: data.userId }, { demoBalance: balanceData });
-                } else {
-                    await models.userModel.findOneAndUpdate({ _id: data.userId }, { balance: balanceData });
-                }
-                // Debit house for payout
-                try { await houseHelper.debitHouse(winAmount); } catch (err) { console.error('SlotController house debit error', err.message); }
-            }
-            return { status: true, data: userData, roundData: roundData };
+
+        // debit player for the wager
+        current -= betNum;
+        userData[field] = current;
+        await models.userModel.findByIdAndUpdate(userId, { [field]: current });
+        SocketManager.requestWargerAmountUpdate({ userId: userId, amount: betNum, coinType: 'CHIPS' });
+        try { await houseHelper.creditHouse(betNum); } catch (err) { console.error('SlotController house credit error', err.message); }
+
+        const roundData = await new models.slotRoundModel({
+            roundNumber: roundNumber,
+            userId: userId,
+            betAmount: betNum,
+            coinType: 'CHIPS',
+            clientSeed: clientSeed,
+            roundDate: new Date()
+        }).save();
+
+        const winAmount = betNum * (Number(payout) - 1);
+        if (winAmount > 0) {
+            current += winAmount;
+            userData[field] = current;
+            await models.userModel.findByIdAndUpdate(userId, { [field]: current });
+            SocketManager.requestBalanceUpdate(userData);
+            try { await houseHelper.debitHouse(winAmount); } catch (err) { console.error('SlotController house debit error', err.message); }
         }
+
+        return { status: true, data: userData, roundData: roundData };
     }
     catch (err) {
         console.error({ title: 'SlotController => saveSlotRound', message: err.message });

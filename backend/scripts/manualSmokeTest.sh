@@ -18,11 +18,9 @@
 #  - Login or create a user
 #  - Toggle demo mode ON
 #  - Simulate a 150 chip deposit
-#  - Verify balance increased
-#  - Simulate a game bet (10 chips deducted)
-#  - Verify balance decreased
-#  - Simulate a game payout (25 chips added)
-#  - Verify final balance
+#  - Verify numeric chips balance increased
+#  - (optionally) simulate a game bet and payout
+#  - Verify final chips balance
 # ============================================================================
 
 set -e
@@ -169,11 +167,11 @@ BALANCE_AFTER_DEPOSIT=$(curl -s -X POST "$API_BASE/v0/auth/getAuthData" \
 
 echo "Auth data after deposit: $BALANCE_AFTER_DEPOSIT"
 
-if echo "$BALANCE_AFTER_DEPOSIT" | grep -q "demoBalance"; then
-    success "Demo balance visible in auth data"
-    echo "Extract the demoBalance field to verify it shows ~150 chips"
+if echo "$BALANCE_AFTER_DEPOSIT" | grep -q "chipsBalance\|demoChipsBalance"; then
+  success "Chips balance visible in auth data"
+  echo "Extract the chipsBalance/demoChipsBalance field to verify it shows ~150 chips"
 else
-    warning "demoBalance not visible; may be in balanceData instead"
+  warning "Chips balance not visible in auth data; check database directly"
 fi
 
 # ============================================================================

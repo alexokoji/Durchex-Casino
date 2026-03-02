@@ -40,68 +40,34 @@ exports.updateCrashRound = async (data) => {
 exports.updatePlayerBalance = async (data, warger = false) => {
     try {
         const { userId, amount } = data;
-        if (!userId)
-            return { status: false, message: 'Invalid Request' };
+        if (!userId) return { status: false, message: 'Invalid Request' };
 
         let userData = await models.userModel.findOne({ _id: userId });
-        if (!userData)
-            return { status: false, message: 'User not found' };
+        if (!userData) return { status: false, message: 'User not found' };
 
-        // Use demoBalance if in demo mode, otherwise use regular balance
-        const balanceData = userData.demoMode ? (userData.demoBalance || { data: [] }) : userData.balance;
-        const amountNum = Number(amount) || 0;
+        const amountNum = Number(amount) || 0; // amount now expected to be in chips
+        // decide which numeric field to touch
+        const field = userData.demoMode ? 'demoChipsBalance' : 'chipsBalance';
+        let current = userData[field] || 0;
 
-        // For unified chips system: locate the CHIPS entry
-        if (!balanceData.data || balanceData.data.length === 0) {
-            return { status: false, message: 'No balance available' };
-        }
-
-        // try to find a chips/currency entry; fall back to first slot for backwards compatibility
-        let currencyIndex = balanceData.data.findIndex(b => b.coinType === 'CHIPS' || b.currency === 'CHIPS');
-        if (currencyIndex === -1) {
-            currencyIndex = 0; // use first entry and convert it to CHIPS
-            balanceData.data[currencyIndex].coinType = 'CHIPS';
-            balanceData.data[currencyIndex].currency = 'CHIPS';
-        }
-        const entry = balanceData.data[currencyIndex];
-
-        // If positive amount => deduct from user (placing bet)
         if (amountNum > 0) {
-            if (entry.balance < amountNum)
-                return { status: false, message: 'Not enough balance' };
+            if (current < amountNum) return { status: false, message: 'Not enough balance' };
 
             if (warger) {
-                const coinInfo = balanceData.data[currencyIndex];
-                SocketManager.requestWargerAmountUpdate({ userId: userId, amount: amountNum, coinType: coinInfo });
+                SocketManager.requestWargerAmountUpdate({ userId, amount: amountNum, coinType: 'CHIPS' });
             }
 
-            balanceData.data[currencyIndex].balance = balanceData.data[currencyIndex].balance - amountNum;
-            if (userData.demoMode) {
-                await models.userModel.findOneAndUpdate({ _id: userId }, { demoBalance: balanceData });
-                userData.demoBalance = balanceData;
-            } else {
-                await models.userModel.findOneAndUpdate({ _id: userId }, { balance: balanceData });
-                userData.balance = balanceData;
-            }
+            current -= amountNum;
+            userData[field] = current;
+            await models.userModel.findByIdAndUpdate(userId, { [field]: current });
             SocketManager.requestBalanceUpdate(userData);
-
-            // Credit house with the lost bet
             try { await houseHelper.creditHouse(amountNum); } catch (err) { console.error('CrashController house credit error', err.message); }
-        }
-        else if (amountNum < 0) {
-            // Negative amount => credit user (refund or payout)
+        } else if (amountNum < 0) {
             const credit = Math.abs(amountNum);
-            balanceData.data[currencyIndex].balance = balanceData.data[currencyIndex].balance + credit;
-            if (userData.demoMode) {
-                await models.userModel.findOneAndUpdate({ _id: userId }, { demoBalance: balanceData });
-                userData.demoBalance = balanceData;
-            } else {
-                await models.userModel.findOneAndUpdate({ _id: userId }, { balance: balanceData });
-                userData.balance = balanceData;
-            }
+            current += credit;
+            userData[field] = current;
+            await models.userModel.findByIdAndUpdate(userId, { [field]: current });
             SocketManager.requestBalanceUpdate(userData);
-
-            // Debit house for the payout/refund
             try { await houseHelper.debitHouse(credit); } catch (err) { console.error('CrashController house debit error', err.message); }
         }
 

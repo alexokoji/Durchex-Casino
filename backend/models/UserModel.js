@@ -20,6 +20,11 @@ const ModelSchema = mongoose.Schema({
     loginType: { type: String, enum: ['Google', 'Wallet', 'Email', 'Apple'], default: 'Email' },
     userNickName: { type: String, required: [true, 'Please input userNickName'] },
     type: { type: String, enum: ['user', 'admin'], default: 'user' },
+    // new unified chips balances (numeric) ➜ replaces the old object arrays
+    chipsBalance: { type: Number, default: 0 },
+    demoChipsBalance: { type: Number, default: 0 },
+
+    // legacy fields kept temporarily for migration; can be removed later
     balance: { type: Object, default: balanceObject },
     demoBalance: { type: Object, default: balanceObject }, // Demo mode balance (1000 of each token)
     demoMode: { type: Boolean, default: true }, // Users start in demo mode

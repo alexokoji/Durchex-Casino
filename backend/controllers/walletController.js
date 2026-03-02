@@ -1,52 +1,38 @@
 const models = require('../models');
 const tatumController = require('./tatumController');
+const chipsConverter = require('../services/chipsConverter');
 
-// Fee structure for different coins
-// only USDT and ZELO are supported now; other entries are retained for reference but will be ignored
+// fee structure is still kept in case we convert back to fiat for withdrawals
+// but chips-based operations don't consult it directly
 const FEE_STRUCTURE = {
-    USDT: { networkFee: 1, platformFee: 1 }, // 1 USDT for all stablecoins
-    ZELO: { networkFee: 0, platformFee: 0 } // No fees for platform token
+    USDT: { networkFee: 1, platformFee: 1 },
+    ZELO: { networkFee: 0, platformFee: 0 }
 };
 
-// allowed coin types for frontend exposure
-const ALLOWED_COIN_TYPES = ['USDT','ZELO'];
+// temporary helper used until we remove legacy arrays
 function filterBalance(bal) {
     if (!bal || !bal.data || !Array.isArray(bal.data)) return bal;
-    return { data: bal.data.filter(item => ALLOWED_COIN_TYPES.includes(item.coinType)) };
+    return { data: bal.data.filter(item => ['USDT','ZELO','CHIPS'].includes(item.coinType)) };
 }
 
 
 // Demo mode functions
+// return numeric demo chips balance (for compatibility with existing client)
 exports.getDemoBalance = async (req, res) => {
     try {
         const { userId } = req.body;
-        
-        if (!userId) {
-            return res.json({ status: false, message: 'Invalid Request' });
-        }
+        if (!userId) return res.json({ status: false, message: 'Invalid Request' });
 
         const user = await models.userModel.findById(userId);
-        if (!user) {
-            return res.json({ status: false, message: 'User not found' });
-        }
+        if (!user) return res.json({ status: false, message: 'User not found' });
 
-        // Initialize demo balance if not exists
-        if (!user.demoBalance || !user.demoBalance.data) {
-            const demoBal = {
-                data: [
-                    { coinType: 'USDT', balance: 1000, chain: 'ETH', type: 'erc-20' },
-                    { coinType: 'USDT', balance: 1000, chain: 'BNB', type: 'bep-20' },
-                    { coinType: 'USDT', balance: 1000, chain: 'TRON', type: 'trc-20' },
-                    { coinType: 'ZELO', balance: 1000, chain: '', type: '' }
-                ]
-            };
-            user.demoBalance = demoBal;
+        // ensure numeric field exists (migration may populate later)
+        if (typeof user.demoChipsBalance !== 'number') {
+            user.demoChipsBalance = 0;
             await user.save();
         }
 
-        // hide any other coins before returning
-        const output = filterBalance(user.demoBalance);
-        res.json({ status: true, data: output, demoMode: user.demoMode });
+        res.json({ status: true, data: { chips: user.demoChipsBalance }, demoMode: user.demoMode });
     } catch (err) {
         console.error('getDemoBalance error:', err.message);
         return res.json({ status: false, message: 'Server Error' });
@@ -57,29 +43,17 @@ exports.getDemoBalance = async (req, res) => {
 exports.toggleDemoMode = async (req, res) => {
     try {
         const { userId, demoMode } = req.body;
-        
-        if (!userId) {
-            return res.json({ status: false, message: 'Invalid Request' });
-        }
+        if (!userId) return res.json({ status: false, message: 'Invalid Request' });
 
         const user = await models.userModel.findByIdAndUpdate(
             userId,
             { demoMode: demoMode },
             { new: true }
         );
+        if (!user) return res.json({ status: false, message: 'User not found' });
 
-        if (!user) {
-            return res.json({ status: false, message: 'User not found' });
-        }
-
-        let balanceData = demoMode ? user.demoBalance : user.balance;
-        balanceData = filterBalance(balanceData);
-        res.json({ 
-            status: true, 
-            message: `Switched to ${demoMode ? 'demo' : 'real'} mode`,
-            demoMode: user.demoMode,
-            balance: balanceData
-        });
+        const chips = demoMode ? user.demoChipsBalance : user.chipsBalance;
+        res.json({ status: true, message: `Switched to ${demoMode ? 'demo' : 'real'} mode`, demoMode: user.demoMode, chips });
     } catch (err) {
         console.error('toggleDemoMode error:', err.message);
         return res.json({ status: false, message: 'Server Error' });
@@ -91,86 +65,53 @@ exports.processWithdrawal = async (req, res) => {
     try {
         const { userId, coinType, chain, amount, address, tokenType = 'native' } = req.body;
 
-        if (!userId || !coinType || !amount || !address) {
+        if (!userId || !amount || !address) {
             return res.json({ status: false, message: 'Missing required fields' });
         }
 
         const user = await models.userModel.findById(userId);
-        if (!user) {
-            return res.json({ status: false, message: 'User not found' });
-        }
+        if (!user) return res.json({ status: false, message: 'User not found' });
 
-        // Get fee structure
-        const fees = FEE_STRUCTURE[coinType] || { networkFee: 0.001, platformFee: 0.1 };
-        const totalFee = fees.networkFee + (amount * 0.01); // 1% of amount or min platform fee
-        const finalAmount = amount - totalFee;
+        // convert withdrawal amount (which may be provided in any currency) into chips
+        const chipsToDeduct = chipsConverter.toChips(amount, coinType);
+        const current = user.demoMode ? user.demoChipsBalance : user.chipsBalance;
+        if (current < chipsToDeduct) return res.json({ status: false, message: 'Insufficient balance' });
 
-        // Get current balance
-        const balanceData = user.demoMode ? user.demoBalance : user.balance;
-        const currencyBalance = balanceData.data.find(b => 
-            b.coinType === coinType && b.type === tokenType
-        );
-
-        if (!currencyBalance || currencyBalance.balance < amount) {
-            return res.json({ status: false, message: 'Insufficient balance' });
-        }
-
-        // Create withdrawal record
+        // create record (store chips amount)
         const withdrawal = await new models.withdrawalModel({
             userId,
-            coinType,
-            chain: chain || coinType,
-            tokenType,
-            amount,
-            networkFee: fees.networkFee,
-            platformFee: totalFee - fees.networkFee,
-            totalFee,
-            finalAmount,
+            amount: chipsToDeduct,
+            coinType: 'CHIPS',
+            chain: '',
+            tokenType: 'native',
+            networkFee: 0,
+            platformFee: 0,
+            totalFee: 0,
+            finalAmount: chipsToDeduct,
             toAddress: address,
-            fromAddress: user.address?.[coinType] || 'unknown',
+            fromAddress: user.address?.['CHIPS'] || 'internal',
             status: user.demoMode ? 'confirmed' : 'pending',
             isDemo: user.demoMode,
             estimatedArrival: new Date(Date.now() + (user.demoMode ? 0 : 3600000))
         }).save();
 
-        // Update user balance
-        currencyBalance.balance -= amount;
+        // deduct chips
         if (user.demoMode) {
-            user.demoBalance = balanceData;
+            user.demoChipsBalance -= chipsToDeduct;
         } else {
-            user.balance = balanceData;
+            user.chipsBalance -= chipsToDeduct;
         }
         await user.save();
 
-        // If demo mode, instantly confirm
         if (user.demoMode) {
             withdrawal.status = 'confirmed';
             withdrawal.transactionHash = `DEMO-${withdrawal._id}`;
             withdrawal.completedAt = new Date();
             await withdrawal.save();
-            
-            return res.json({
-                status: true,
-                message: '✅ Demo withdrawal successful!',
-                withdrawal,
-                newBalance: currencyBalance.balance
-            });
+            return res.json({ status: true, message: '✅ Demo withdrawal successful!', withdrawal, newBalance: user.demoChipsBalance });
         }
 
-        // For real mode, initiate actual withdrawal
-        // This would call the existing withdrawal methods
-        res.json({
-            status: true,
-            message: 'Withdrawal initiated',
-            withdrawal,
-            newBalance: currencyBalance.balance,
-            feeBreakdown: {
-                networkFee: fees.networkFee,
-                platformFee: totalFee - fees.networkFee,
-                totalFee,
-                finalAmount
-            }
-        });
+        res.json({ status: true, message: 'Withdrawal initiated', withdrawal, newBalance: user.chipsBalance });
 
     } catch (err) {
         console.error('processWithdrawal error:', err.message);
@@ -298,7 +239,7 @@ exports.simulateDepositReceived = async (req, res) => {
     try {
         const { userId, coinType, chain, amount } = req.body;
 
-        if (!userId || !coinType || !amount) {
+        if (!userId || !amount) {
             return res.json({ status: false, message: 'Invalid Request' });
         }
 
@@ -306,35 +247,19 @@ exports.simulateDepositReceived = async (req, res) => {
         if (!user) {
             return res.json({ status: false, message: 'User not found' });
         }
-        // Debug logs for troubleshooting
+
         console.log('simulateDepositReceived called', { userId, coinType, chain, amount, demoMode: user.demoMode });
 
-        // Pick correct balance container (demo or real)
-        const balanceData = user.demoMode ? (user.demoBalance || { data: [] }) : (user.balance || { data: [] });
-        console.log('beforeBalanceData', JSON.stringify(balanceData));
-
-        let currency = balanceData.data.find(b => b.coinType === coinType && (chain ? b.chain === chain : true));
-
-        if (currency) {
-            currency.balance = Number(currency.balance || 0) + Number(amount);
-        } else {
-            const newEntry = { coinType, balance: Number(amount), chain: chain || '', type: 'native' };
-            balanceData.data.push(newEntry);
-            currency = newEntry;
-        }
-
+        // convert to chips and credit appropriate balance
+        const chips = chipsConverter.toChips(amount, coinType);
         if (user.demoMode) {
-            user.demoBalance = balanceData;
-            user.markModified('demoBalance');
+            user.demoChipsBalance = (user.demoChipsBalance || 0) + chips;
         } else {
-            user.balance = balanceData;
-            user.markModified('balance');
+            user.chipsBalance = (user.chipsBalance || 0) + chips;
         }
-
         await user.save();
-        console.log('afterBalanceData', JSON.stringify(user.demoMode ? user.demoBalance : user.balance));
 
-        // Mark deposit records as confirmed
+        // mark any pending deposits as confirmed (legacy behaviour)
         await models.depositModel.updateMany(
             { userId, coinType, status: 'pending' },
             { status: 'confirmed', confirmedAt: new Date(), amount }
@@ -342,8 +267,8 @@ exports.simulateDepositReceived = async (req, res) => {
 
         return res.json({
             status: true,
-            message: `✅ ${amount} ${coinType} deposited successfully!`,
-            newBalance: filterBalance(balanceData),
+            message: `✅ ${amount} ${coinType} converted to ${chips} chips!`,
+            newBalance: { chips: user.demoMode ? user.demoChipsBalance : user.chipsBalance },
             demoMode: user.demoMode
         });
 

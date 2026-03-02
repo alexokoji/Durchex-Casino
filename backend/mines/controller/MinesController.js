@@ -11,53 +11,34 @@ exports.updateMyBalance = async (data) => {
         if (!userData)
             return { status: false, message: 'User not found' };
 
-        // Use demoBalance if in demo mode, otherwise use regular balance
-        const balanceData = userData.demoMode ? (userData.demoBalance || { data: [] }) : userData.balance;
-        if (!balanceData.data || balanceData.data.length === 0) {
-            return { status: false, message: 'No balance available' };
-        }
-
-        // unified chips behaviour: look for CHIPS entry or convert first one
-        let currencyIndex = balanceData.data.findIndex(b => b.coinType === 'CHIPS' || b.currency === 'CHIPS');
-        if (currencyIndex === -1) {
-            currencyIndex = 0;
-            balanceData.data[currencyIndex].coinType = 'CHIPS';
-            balanceData.data[currencyIndex].currency = 'CHIPS';
-        }
+        const field = userData.demoMode ? 'demoChipsBalance' : 'chipsBalance';
+        let current = userData[field] || 0;
         const amountNum = Number(betAmount) || 0;
-        // Deducting bet (positive) or crediting (negative)
+
         if (amountNum > 0) {
-            if (balanceData.data[currencyIndex].balance < amountNum) {
+            if (current < amountNum) {
                 return { status: false, message: 'Not enough balance' };
             }
-            if (balanceData.data[currencyIndex].balance >= amountNum) {
-                if (betAmount >= 0 || type === 'finish')
-                    requestWargerAmountUpdate({ userId: userId, amount: data.betAmount, coinType: { coinType: 'CHIPS' } });
-                balanceData.data[currencyIndex].balance = balanceData.data[currencyIndex].balance - amountNum;
-                if (userData.demoMode) {
-                    await models.userModel.findOneAndUpdate({ _id: userId }, { demoBalance: balanceData });
-                } else {
-                    await models.userModel.findOneAndUpdate({ _id: userId }, { balance: balanceData });
-                }
-                // Credit house with lost bet
-                try { await houseHelper.creditHouse(amountNum); } catch (err) { console.error('MinesController house credit error', err.message); }
-                return { status: true, data: balanceData };
+            // send wager update when placing or finishing a bet
+            if (betAmount >= 0 || type === 'finish') {
+                requestWargerAmountUpdate({ userId: userId, amount: amountNum, coinType: 'CHIPS' });
             }
-            else
-                return { status: false, message: 'Not enough balance' };
+            current -= amountNum;
+            userData[field] = current;
+            await models.userModel.findByIdAndUpdate(userId, { [field]: current });
+            try { await houseHelper.creditHouse(amountNum); } catch (err) { console.error('MinesController house credit error', err.message); }
+            return { status: true, data: { chips: current } };
         }
         else if (amountNum < 0) {
-            // Negative amount => credit user (win/refund)
             const credit = Math.abs(amountNum);
-            balanceData.data[currencyIndex].balance = balanceData.data[currencyIndex].balance + credit;
-            if (userData.demoMode) {
-                await models.userModel.findOneAndUpdate({ _id: userId }, { demoBalance: balanceData });
-            } else {
-                await models.userModel.findOneAndUpdate({ _id: userId }, { balance: balanceData });
-            }
-            // Debit house for payout
+            current += credit;
+            userData[field] = current;
+            await models.userModel.findByIdAndUpdate(userId, { [field]: current });
             try { await houseHelper.debitHouse(credit); } catch (err) { console.error('MinesController house debit error', err.message); }
-            return { status: true, data: balanceData };
+            return { status: true, data: { chips: current } };
+        }
+        else {
+            return { status: true, data: { chips: current } };
         }
     }
     catch (err) {

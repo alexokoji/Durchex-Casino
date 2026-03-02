@@ -267,7 +267,8 @@ export default function WalletDepositModal({ open, onClose }) {  const API_URL =
     // the header and games immediately see the update
     if (result?.payload?.data) {
       const updatedUser = { ...auth.userData };
-      updatedUser.demoBalance = result.payload.data;
+      // server now returns numeric chips value
+      updatedUser.demoChipsBalance = result.payload.data.chips !== undefined ? result.payload.data.chips : (result.payload.data || 0);
       updatedUser.demoMode = result.payload.demoMode;
       dispatch({ type: 'SET_USERDATA', data: updatedUser });
     }
@@ -817,12 +818,11 @@ export default function WalletDepositModal({ open, onClose }) {  const API_URL =
               {wallet.error && <Alert severity="error">{wallet.error}</Alert>}
               {wallet.demoBalance ? (
                 <Box sx={{ mt: 2 }}>
-                  {wallet.demoBalance.data && wallet.demoBalance.data.length > 0 ? (
-                    wallet.demoBalance.data.map((b, idx) => (
-                      <Typography key={idx} sx={{ color: '#ccc' }}>{b.coinType}: {b.balance}</Typography>
-                    ))
+                  {/* only show numeric chips now */}
+                  {typeof wallet.demoBalance.chips === 'number' ? (
+                    <Typography sx={{ color: '#ccc' }}>CHIPS: {wallet.demoBalance.chips}</Typography>
                   ) : (
-                    <Typography sx={{ color: '#999' }}>No demo currency entries.</Typography>
+                    <Typography sx={{ color: '#999' }}>No demo balance</Typography>
                   )}
                 </Box>
               ) : (

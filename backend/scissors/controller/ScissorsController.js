@@ -8,65 +8,51 @@ const houseHelper = require('../../helpers/houseHelper');
 exports.saveScissorsRound = async (data) => {
     try {
         const userData = await models.userModel.findOne({ _id: data.userId });
-        // Use demoBalance if in demo mode, otherwise use regular balance
-        const balanceData = userData.demoMode ? (userData.demoBalance || { data: [] }) : userData.balance;
-        if (!balanceData.data || balanceData.data.length === 0) {
-            return { status: false, message: 'No balance available' };
-        }
+        if (!userData) return { status: false, message: 'User not found' };
 
-        // unified chips lookup/convert
-        let currencyIndex = balanceData.data.findIndex(b => b.coinType === 'CHIPS' || b.currency === 'CHIPS');
-        if (currencyIndex === -1) {
-            currencyIndex = 0;
-            balanceData.data[currencyIndex].coinType = 'CHIPS';
-            balanceData.data[currencyIndex].currency = 'CHIPS';
-        }
-
-        if (balanceData.data[currencyIndex].balance < Number(data.betAmount)) {
+        const field = userData.demoMode ? 'demoChipsBalance' : 'chipsBalance';
+        let current = userData[field] || 0;
+        const betNum = Number(data.betAmount) || 0;
+        if (current < betNum) {
             return { status: false, message: 'Not enough balance' };
         }
-        else {
-            requestWargerAmountUpdate({ userId: data.userId, amount: data.betAmount, coinType: { coinType: 'CHIPS' } });
-            const roundData = await new models.scissorsRoundModel({
-                roundNumber: data.roundNumber,
-                userId: data.userId,
-                betAmount: data.betAmount,
-                coinType: 'CHIPS',
-                betNumber: data.playerNumber,
-                winNumber: data.dealerNumber,
-                roundResult: data.result,
-                serverSeed: data.serverSeed,
-                clientSeed: data.clientSeed,
-                payout: payout,
-                roundDate: new Date()
-            }).save();
-            if (data.result === 'win') {
-                const winAmount = Number(data.betAmount) * (Number(payout) - 1);
-                balanceData.data[currencyIndex].balance = balanceData.data[currencyIndex].balance + winAmount;
-                if (userData.demoMode) {
-                    await models.userModel.findOneAndUpdate({ _id: data.userId }, { 'demoBalance': balanceData });
-                } else {
-                    await models.userModel.findOneAndUpdate({ _id: data.userId }, { 'balance': balanceData });
-                }
-                // House pays the winning amount
-                try { await houseHelper.debitHouse(winAmount); } catch (err) { console.error('scissorsController house debit error', err.message); }
-            }
-            else if (data.result === 'lost') {
-                const lostAmount = Number(data.betAmount);
-                balanceData.data[currencyIndex].balance = balanceData.data[currencyIndex].balance - lostAmount;
-                if (userData.demoMode) {
-                    await models.userModel.findOneAndUpdate({ _id: data.userId }, { 'demoBalance': balanceData });
-                } else {
-                    await models.userModel.findOneAndUpdate({ _id: data.userId }, { 'balance': balanceData });
-                }
-                // Credit house with the lost bet
-                try { await houseHelper.creditHouse(lostAmount); } catch (err) { console.error('scissorsController house credit error', err.message); }
-            }
-            setTimeout(() => {
-                requestBalanceUpdate(userData);
-            }, 6000);
-            return { status: true, data: userData, roundData: roundData };
+
+        // deduct bet
+        current -= betNum;
+        userData[field] = current;
+        await models.userModel.findByIdAndUpdate(data.userId, { [field]: current });
+        requestWargerAmountUpdate({ userId: data.userId, amount: betNum, coinType: 'CHIPS' });
+        try { await houseHelper.creditHouse(betNum); } catch (err) { console.error('scissorsController house credit error', err.message); }
+
+        const roundData = await new models.scissorsRoundModel({
+            roundNumber: data.roundNumber,
+            userId: data.userId,
+            betAmount: betNum,
+            coinType: 'CHIPS',
+            betNumber: data.playerNumber,
+            winNumber: data.dealerNumber,
+            roundResult: data.result,
+            serverSeed: data.serverSeed,
+            clientSeed: data.clientSeed,
+            payout: payout,
+            roundDate: new Date()
+        }).save();
+
+        if (data.result === 'win') {
+            const winAmount = betNum * (Number(payout) - 1);
+            current += winAmount;
+            userData[field] = current;
+            await models.userModel.findByIdAndUpdate(data.userId, { [field]: current });
+            try { await houseHelper.debitHouse(winAmount); } catch (err) { console.error('scissorsController house debit error', err.message); }
+        } else if (data.result === 'lost') {
+            // bet already debited above
+            try { await houseHelper.creditHouse(betNum); } catch (err) { console.error('scissorsController house credit error', err.message); }
         }
+
+        setTimeout(() => {
+            requestBalanceUpdate(userData);
+        }, 6000);
+        return { status: true, data: userData, roundData: roundData };
     }
     catch (err) {
         console.error({ title: 'scissorsController => saveScissorsRound', message: err.message });

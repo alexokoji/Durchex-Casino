@@ -302,19 +302,13 @@ const WalletModal = ({ open, setOpen }) => {
     }
   };
 
-  // Calculate demo balance total
+  // Calculate demo chips balance
   const calculateDemoBalance = () => {
     try {
       const userData = authentication?.userData;
-      if (!userData || !userData.demoBalance) return 0;
-      const demoBalance = userData.demoBalance;
-      if (typeof demoBalance === 'number') return demoBalance;
-      if (demoBalance.data && Array.isArray(demoBalance.data)) {
-        return demoBalance.data.reduce((acc, b) => {
-          if (!b) return acc;
-          const val = parseFloat(b.balance || 0);
-          return acc + (isNaN(val) ? 0 : val);
-        }, 0);
+      if (!userData || !userData.demoMode) return 0;
+      if (typeof userData.demoChipsBalance === 'number') {
+        return userData.demoChipsBalance;
       }
       return 0;
     } catch (e) {
@@ -322,19 +316,13 @@ const WalletModal = ({ open, setOpen }) => {
     }
   };
 
-  // Calculate real balance total
+  // Calculate real chips balance
   const calculateRealBalance = () => {
     try {
       const userData = authentication?.userData;
-      if (!userData || !userData.balance) return 0;
-      const balance = userData.balance;
-      if (typeof balance === 'number') return balance;
-      if (balance.data && Array.isArray(balance.data)) {
-        return balance.data.reduce((acc, b) => {
-          if (!b) return acc;
-          const val = parseFloat(b.balance || 0);
-          return acc + (isNaN(val) ? 0 : val);
-        }, 0);
+      if (!userData || userData.demoMode) return 0;
+      if (typeof userData.chipsBalance === 'number') {
+        return userData.chipsBalance;
       }
       return 0;
     } catch (e) {

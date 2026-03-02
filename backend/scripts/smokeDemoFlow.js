@@ -33,10 +33,11 @@ async function main() {
             password: 'password',
             userNickName: 'SmokeTester',
             currency: { coinType: 'CHIPS', type: 'chip' },
-            balance: { data: [{ coinType: 'CHIPS', balance: 0, chain: '', type: 'native' }] },
-            demoMode: true,
-            demoBalance: { data: [{ coinType: 'CHIPS', balance: 0, chain: '', type: 'native' }] }
+            chipsBalance: 0,
+            demoChipsBalance: 0,
+            demoMode: true
         }).save();
+
         console.log('➕ Created new demo user', user._id);
     } else {
         console.log('♻️  Reusing existing demo user', user._id);
@@ -44,8 +45,9 @@ async function main() {
 
     // ensure demo mode is enabled
     user.demoMode = true;
-    if (!user.demoBalance || !Array.isArray(user.demoBalance.data)) {
-        user.demoBalance = { data: [{ coinType: 'CHIPS', balance: 0, chain: '', type: 'native' }] };
+    // ensure numeric field exists
+    if (typeof user.demoChipsBalance !== 'number') {
+        user.demoChipsBalance = 0;
     }
     await user.save();
 
@@ -57,8 +59,7 @@ async function main() {
     await walletController.simulateDepositReceived(req, res);
 
     user = await models.userModel.findById(user._id);
-    console.log('💰 Demo balance after deposit:', JSON.stringify(user.demoBalance));
-
+    console.log('💰 Demo chips after deposit:', user.demoChipsBalance);
     // place a bet of 10 chips using CrashController
     console.log('\n🎲 Running game controller checks');
     const betResp = await crashController.updatePlayerBalance({ userId: user._id.toString(), amount: 10 });
@@ -92,7 +93,7 @@ async function main() {
         userId: user._id.toString(),
         betAmount: 5,
         coinType: 'CHIPS',
-        difficulty: 'easy',
+        difficulty: 1, // numeric difficulty
         isOver: true,
         payout: 1.5,
         fairData: {},
@@ -124,7 +125,8 @@ async function main() {
     console.log('🐢 TurtleController win response:', turtleWin);
 
     user = await models.userModel.findById(user._id);
-    console.log('✅ Final demo balance:', JSON.stringify(user.demoBalance));
+    console.log('✅ Final demo chips:', user.demoChipsBalance);
+
 
     mongoose.disconnect();
     console.log('🛑 Test complete; disconnected.');
