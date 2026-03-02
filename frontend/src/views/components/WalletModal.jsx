@@ -98,12 +98,26 @@ const WalletModal = ({ open, setOpen }) => {
   // Sync demo balance/mode from wallet slice into auth state so the
   // header and any game views will immediately reflect changes.
   useEffect(() => {
-    if (authentication?.userData) {
+    if (!authentication?.userData) return;
+    
+    // Check if actual values differ before dispatching to avoid infinite loops
+    const userDemoBalance = authentication.userData.demoBalance;
+    const userDemoMode = authentication.userData.demoMode;
+    const walletDemoBalance = wallet.demoBalance;
+    const walletDemoMode = wallet.demoMode;
+    
+    // Compare serialized to catch deep changes
+    const userBalStr = JSON.stringify(userDemoBalance);
+    const walletBalStr = JSON.stringify(walletDemoBalance);
+    const balanceChanged = userBalStr !== walletBalStr;
+    const modeChanged = userDemoMode !== walletDemoMode;
+    
+    if (balanceChanged || modeChanged) {
       const updated = { ...authentication.userData };
-      if (wallet.demoBalance) {
-        updated.demoBalance = wallet.demoBalance;
+      if (walletDemoBalance) {
+        updated.demoBalance = walletDemoBalance;
       }
-      updated.demoMode = wallet.demoMode;
+      updated.demoMode = walletDemoMode;
       dispatch({ type: 'SET_USERDATA', data: updated });
     }
   }, [wallet.demoBalance, wallet.demoMode, authentication?.userData, dispatch]);

@@ -187,18 +187,29 @@ const WalletModal = ({ open, setOpen }) => {
 
   // Whenever the wallet slice gets new demo data or demoMode toggles,
   // mirror that information into authentication.userData so the header
-  // and game components (which read authData) stay in sync. Without
-  // this, pressing "Refresh Demo Balance" only updates wallet.demoBalance
-  // and the header would still show the old amount, making it look like
-  // nothing happened and blocking bets in demo mode.
+  // and game components (which read authData) stay in sync.
   useEffect(() => {
-    if (authentication?.userData) {
-      const updatedUser = { ...authentication.userData };
-      if (wallet.demoBalance) {
-        updatedUser.demoBalance = wallet.demoBalance;
+    if (!authentication?.userData) return;
+    
+    // Check if actual values differ before dispatching to avoid infinite loops
+    const userDemoBalance = authentication.userData.demoBalance;
+    const userDemoMode = authentication.userData.demoMode;
+    const walletDemoBalance = wallet.demoBalance;
+    const walletDemoMode = wallet.demoMode;
+    
+    // Compare serialized to catch deep changes
+    const userBalStr = JSON.stringify(userDemoBalance);
+    const walletBalStr = JSON.stringify(walletDemoBalance);
+    const balanceChanged = userBalStr !== walletBalStr;
+    const modeChanged = userDemoMode !== walletDemoMode;
+    
+    if (balanceChanged || modeChanged) {
+      const updated = { ...authentication.userData };
+      if (walletDemoBalance) {
+        updated.demoBalance = walletDemoBalance;
       }
-      updatedUser.demoMode = wallet.demoMode;
-      dispatch({ type: 'SET_USERDATA', data: updatedUser });
+      updated.demoMode = walletDemoMode;
+      dispatch({ type: 'SET_USERDATA', data: updated });
     }
   }, [wallet.demoBalance, wallet.demoMode, authentication?.userData, dispatch]);
 
