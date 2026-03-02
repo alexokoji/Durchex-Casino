@@ -15,6 +15,7 @@ import InfoIcon from '@mui/icons-material/Info';
 import axios from 'axios';
 import CryptoDepositModal from './CryptoDepositModal';
 import CryptoWithdrawModal from './CryptoWithdrawModal';
+import { fetchDemoBalance } from '../../../redux/walletSlice';
 
 // Add CSS animations - inject only once
 if (!document.getElementById('wallet-modal-animations')) {
