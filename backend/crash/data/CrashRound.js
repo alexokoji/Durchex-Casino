@@ -208,7 +208,7 @@ module.exports = class CrashRound {
             }
             else {
                 this.betUsers.splice(index, 1);
-                socketManager.joinBetResult({ status: false, message: 'You can not join because of some reason.' }, socket);
+                socketManager.joinBetResult({ status: false, message: response.message || 'You can not join because of some reason.' }, socket);
             }
         }
         else if (this.checkWaitingBetable(data)) {
@@ -223,7 +223,8 @@ module.exports = class CrashRound {
             socketManager.joinBetResult({ status: true, data: { joinType: 'waiting' } }, socket);
         }
         else {
-            socketManager.joinBetResult({ status: false, message: 'You can not join because of some reason.' }, socket);
+            // neither direct nor waiting bet permitted – likely round not open or user already in list
+            socketManager.joinBetResult({ status: false, message: 'Unable to join: round not open or already placed bet.' }, socket);
         }
     }
 
@@ -265,7 +266,7 @@ module.exports = class CrashRound {
                 }
                 else {
                     this.betUsers.splice(index, 1);
-                    socketManager.joinBetResult({ status: false, message: 'You can not join because of some reason.' }, data.socket);
+                    socketManager.joinBetResult({ status: false, message: response.message || 'You can not join because of some reason.' }, data.socket);
                 }
             });
         }

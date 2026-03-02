@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { 
   Modal, Box, IconButton, Typography, TextField, Button, Alert, Tabs, Tab, 
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
@@ -11,6 +11,7 @@ import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import CurrencyBitcoinIcon from '@mui/icons-material/CurrencyBitcoin';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import StarIcon from '@mui/icons-material/Star';
+import InfoIcon from '@mui/icons-material/Info';
 import axios from 'axios';
 import CryptoDepositModal from './CryptoDepositModal';
 import CryptoWithdrawModal from './CryptoWithdrawModal';
@@ -204,6 +205,9 @@ export default function WalletDepositModal({ open, onClose }) {  const API_URL =
   const [bankName, setBankName] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [accountHolder, setAccountHolder] = useState('');
+
+  const dispatch = useDispatch();
+  const wallet = useSelector(state => state.wallet);
   
   // USDT/Blockonomics modal
   const [usdtModalOpen, setUsdtModalOpen] = useState(false);
@@ -213,6 +217,10 @@ export default function WalletDepositModal({ open, onClose }) {  const API_URL =
   useEffect(() => {
     if (open && tab === 3) {
       loadHistory();
+    }
+    if (open && tab === 4) {
+      // fetch demo balance when the Demo Balance tab is shown
+      if (userId) dispatch(fetchDemoBalance(userId));
     }
   }, [open, tab]);
 
@@ -424,6 +432,7 @@ export default function WalletDepositModal({ open, onClose }) {  const API_URL =
           />
           <Tab icon={<AccountBalanceIcon sx={{ mr: 1 }} />} label="Withdraw" iconPosition="start" />
           <Tab icon={<ReceiptIcon sx={{ mr: 1 }} />} label="History" iconPosition="start" />
+          <Tab icon={<InfoIcon sx={{ mr: 1 }} />} label="Demo Balance" iconPosition="start" />
         </Tabs>
 
         {/* ALERT */}
@@ -781,6 +790,33 @@ export default function WalletDepositModal({ open, onClose }) {  const API_URL =
               )}
             </Box>
           )}
+
+          {/* DEMO BALANCE */}
+          {tab === 4 && (
+            <Box>
+              <Typography variant="h6" sx={{ mb: 3, fontWeight: 'bold', color: '#BA6AFF' }}>Demo Balance</Typography>
+              <Box sx={{ mb: 2 }}>
+                <Button sx={primaryButtonStyle} onClick={() => dispatch(fetchDemoBalance(userId))} disabled={wallet.loading}>
+                  {wallet.loading ? '⏳ Refreshing...' : '🔄 Refresh Demo Balance'}
+                </Button>
+              </Box>
+              {wallet.error && <Alert severity="error">{wallet.error}</Alert>}
+              {wallet.demoBalance ? (
+                <Box sx={{ mt: 2 }}>
+                  {wallet.demoBalance.data && wallet.demoBalance.data.length > 0 ? (
+                    wallet.demoBalance.data.map((b, idx) => (
+                      <Typography key={idx} sx={{ color: '#ccc' }}>{b.coinType}: {b.balance}</Typography>
+                    ))
+                  ) : (
+                    <Typography sx={{ color: '#999' }}>No demo currency entries.</Typography>
+                  )}
+                </Box>
+              ) : (
+                <Typography sx={{ color: '#999' }}>Demo balance not fetched yet.</Typography>
+              )}
+            </Box>
+          )}
+
         </Box>
       </Box>
     </Modal>

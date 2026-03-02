@@ -21,8 +21,8 @@ const authReducer = (state = preState, action) => {
                 userData: action.data
             };
         case 'SET_BALANCEDATA':
-            // only keep USDT/ZELO entries
-            const allowed = ['USDT','ZELO'];
+            // only keep USDT/ZELO/CHIPS entries (chippied amounts treated as unified chips)
+            const allowed = ['USDT','ZELO','CHIPS'];
             let filtered = action.data;
             if (Array.isArray(action.data)) {
                 filtered = action.data.filter(b => allowed.includes(b.coinType));

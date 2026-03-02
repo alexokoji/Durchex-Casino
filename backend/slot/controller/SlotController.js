@@ -30,12 +30,18 @@ exports.saveSlotRound = async (data) => {
         // Use demoBalance if in demo mode, otherwise use regular balance
         const balanceData = userData.demoMode ? (userData.demoBalance || { data: [] }) : userData.balance;
         
-        // For unified chips system: use first available balance entry
+        // For unified chips system: locate CHIPS entry or fall back to first
         if (!balanceData.data || balanceData.data.length === 0) {
             return { status: false, message: 'No balance available' };
         }
 
-        const currencyIndex = 0; // Use first available currency as chips
+        let currencyIndex = balanceData.data.findIndex(b => b.coinType === 'CHIPS' || b.currency === 'CHIPS');
+        if (currencyIndex === -1) {
+            currencyIndex = 0; // convert first entry to chips if nothing else
+            balanceData.data[currencyIndex].coinType = 'CHIPS';
+            balanceData.data[currencyIndex].currency = 'CHIPS';
+        }
+
         if (balanceData.data[currencyIndex].balance < Number(data.betAmount)) {
             return { status: false, message: 'Not enough balance' };
         }

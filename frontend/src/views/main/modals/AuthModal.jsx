@@ -859,7 +859,7 @@ const AuthenticationModal = ({ open, setOpen, authType }) => {
                                 <span>OR</span>
                             </Box>
                             <CustomButton Icon={Apple} Text="Continue with Apple" customStyle={classes.AppleLoginButton} />
-                            <CustomButton Icon={GoogleIcon} Text="Continue with Google" onClick={googleLogin} />
+                            {googleClientId && <CustomButton Icon={GoogleIcon} Text="Continue with Google" onClick={googleLogin} />}
                             <Box className={classes.ORBox}>
                                 <span>Continue With Wallet</span>
                             </Box>

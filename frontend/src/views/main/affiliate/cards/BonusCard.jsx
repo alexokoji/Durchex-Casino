@@ -146,11 +146,19 @@ const BonusCard = () => {
             </Box>
             <Box className={classes.AmountBoxGroup}>
                 <Box className={classes.AmountBox}>
+                    {currency?.coinType?.toUpperCase() === 'CHIPS' ? (
+                    <span className={classes.CurrencyIcon}>💎</span>
+                ) : (
                     <img className={classes.CurrencyIcon} src={`/assets/images/coins/${currency?.coinType?.toLowerCase()}.png`} alt={currency?.coinType} />
+                )}
                     <span className={classes.AmountText}>{claimAmount.toFixed(2)}</span>
                 </Box>
                 <Box className={classes.AmountBox}>
+                    {currency?.coinType?.toUpperCase() === 'CHIPS' ? (
+                    <span className={clsx(classes.CurrencyIcon, classes.LockedCurrencyIcon)}>💎</span>
+                ) : (
                     <img className={clsx(classes.CurrencyIcon, classes.LockedCurrencyIcon)} src={`/assets/images/coins/${currency?.coinType?.toLowerCase()}.png`} alt={currency.coinType} />
+                )}
                     <span className={clsx(classes.AmountText, classes.LockedAmountText)}>{claimAmount.toFixed(2)}</span>
                 </Box>
             </Box>

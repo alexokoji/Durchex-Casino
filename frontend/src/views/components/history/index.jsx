@@ -97,7 +97,11 @@ const HistoryContainer = () => {
                 {
                     transactions.map((item, index) => (
                         <Box key={index} className={classes.TransactionRow}>
+                            {item.currencyData.name.toUpperCase() === 'CHIPS' ? (
+                            <span className={classes.TransactionCoinIcon}>💎</span>
+                        ) : (
                             <img className={classes.TransactionCoinIcon} src={`/assets/images/coins/${item.currencyData.name.toLowerCase()}.png`} alt='icon' />
+                        )}
                             <span className={classes.TransactionAmount}>
                                 {
                                     item.amount.toFixed(item.currencyData.decimal)

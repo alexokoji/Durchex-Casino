@@ -29,17 +29,26 @@ exports.savePlinkoRound = async (data) => {
 
         // Use demoBalance if in demo mode, otherwise use regular balance
         const balanceData = userData.demoMode ? (userData.demoBalance || { data: [] }) : userData.balance;
-        const currencyIndex = balanceData.data.findIndex(item => (item.coinType === userData.currency.coinType && item.type === userData.currency.type));
+        if (!balanceData.data || balanceData.data.length === 0) {
+            return { status: false, message: 'No balance available' };
+        }
+        // unified chips lookup
+        let currencyIndex = balanceData.data.findIndex(b => b.coinType === 'CHIPS' || b.currency === 'CHIPS');
+        if (currencyIndex === -1) {
+            currencyIndex = 0;
+            balanceData.data[currencyIndex].coinType = 'CHIPS';
+            balanceData.data[currencyIndex].currency = 'CHIPS';
+        }
         if (balanceData.data[currencyIndex].balance < Number(data.betAmount)) {
             return { status: false, message: 'Not enough balance' };
         }
         else {
-            SocketManager.requestWargerAmountUpdate({ userId: userId, amount: betAmount, coinType: userData.currency });
+            SocketManager.requestWargerAmountUpdate({ userId: userId, amount: betAmount, coinType: { coinType: 'CHIPS' } });
             const roundData = await new models.plinkoRoundModel({
                 roundNumber: roundNumber,
                 userId: userId,
                 betAmount: betAmount,
-                coinType: userData.currency,
+                coinType: 'CHIPS',
                 payout: payout,
                 rows: rowCount,
                 risk: risk,

@@ -788,7 +788,7 @@ const CrashGame = () => {
                             <Typography className={classes.CommonLabel}>Bet Amount</Typography>
                             <Box className={classes.InputBackground}>
                                 <Box className={classes.InputBox}>
-                                    <img className={classes.CurrencyIcon} src="/assets/images/coins/chips.png" alt="chips" />
+                                    <span className={classes.CurrencyIcon}>💎</span>
                                     <input disabled={playLoading} type="number" value={betAmount} onChange={(e) => setBetAmount(e.target.value)} className={classes.BetAmountInput} />
                                     <Box className={classes.AmountActionBox}>
                                         <Button disabled={playLoading} onClick={() => handleAmountAction(0)} className={classes.AmountActionButton}>1/2</Button>
@@ -861,7 +861,7 @@ const CrashGame = () => {
                                     <span>{betList.length}</span>
                                 </Box>
                                 <Box className={classes.TotalBalanceBox}>
-                                    <img className={classes.CurrencyIcon} src="/assets/images/coins/chips.png" alt="chips" />
+                                    <span className={classes.CurrencyIcon}>💎</span>
                                     <span>{totalBetAmount}</span>
                                 </Box>
                             </Box>
@@ -873,7 +873,7 @@ const CrashGame = () => {
                                                 <Box className={classes.UserNameBox}>{item.userNickName}</Box>
                                                 <Box className={classes.CashoutBox}>{item.isCashout ? item.cashoutAt.toFixed(2) : '-'}</Box>
                                                 <Box className={classes.ListBetAmountBox}>
-                                                    <img className={classes.CurrencyIcon} src="/assets/images/coins/chips.png" alt="chips" />
+                                                    <span className={classes.CurrencyIcon}>💎</span>
                                                     <span>{item.isCashout ? (item.profit).toFixed(4) : Number(item.betAmount).toFixed(4)}</span>
                                                 </Box>
                                             </Box>

@@ -159,7 +159,11 @@ const PlayerDetail = () => {
                                                     return (
                                                         <MenuItem key={index} value={index} className={classes.CustomMenuItem} >
                                                             {/* <img className={classes.CurrencyIcon} src={key !== 'ZELO' ? `https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@1a63530be6e374711a8554f31b17e4cb92c25fa5/svg/color/${key.toLowerCase()}.svg` : 'https://img.icons8.com/arcade/64/null/cheap-2.png'} alt='icon' /> */}
+                                                            {balance.coinType.toUpperCase() === 'CHIPS' ? (
+                                                            <span className={classes.CurrencyIcon}>💎</span>
+                                                        ) : (
                                                             <img src={`/assets/images/coins/${balance.coinType.toLowerCase()}.png`} className={classes.CurrencyIcon} alt="icon" />
+                                                        )}
                                                             <span>{balance.coinType} {balance.type === 'native' ? '' : `(${balance.type})`} : {balance.balance}</span>
                                                         </MenuItem>
                                                     );

@@ -33,15 +33,13 @@ const App = () => {
         </StyledEngineProvider>
     );
 
-    if (googleClientId) {
-        return (
-            <GoogleOAuthProvider clientId={googleClientId}>
-                {children}
-            </GoogleOAuthProvider>
-        );
-    }
-
-    return children;
+    // always include provider to satisfy hooks; if clientId is missing the context
+    // is still provided but login attempts will fail gracefully.
+    return (
+        <GoogleOAuthProvider clientId={googleClientId || ''}>
+            {children}
+        </GoogleOAuthProvider>
+    );
 };
 
 export default App;

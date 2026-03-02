@@ -365,7 +365,11 @@ const BetInputBox = () => {
                 </Box>
                 <Box className={classes.AmountInputBox}>
                     <Box className={classes.InputBox}>
+                        {currency.coinType.toUpperCase() === 'CHIPS' ? (
+                        <span className={classes.CurrencyIcon}>💎</span>
+                    ) : (
                         <img src={`/assets/images/coins/${currency.coinType.toLowerCase()}.png`} alt="icon" />
+                    )}
                         <input value={betAmount} onChange={handleBetAmount} className={classes.BetAmountInput} disabled={buttonDisabled} />
                     </Box>
                     <Box style={{ flex: 'none' }}>

@@ -13,7 +13,17 @@ exports.updateMyBalance = async (data) => {
 
         // Use demoBalance if in demo mode, otherwise use regular balance
         const balanceData = userData.demoMode ? (userData.demoBalance || { data: [] }) : userData.balance;
-        const currencyIndex = balanceData.data.findIndex(item => (item.coinType === userData.currency.coinType && item.type === userData.currency.type));
+        if (!balanceData.data || balanceData.data.length === 0) {
+            return { status: false, message: 'No balance available' };
+        }
+
+        // unified chips behaviour: look for CHIPS entry or convert first one
+        let currencyIndex = balanceData.data.findIndex(b => b.coinType === 'CHIPS' || b.currency === 'CHIPS');
+        if (currencyIndex === -1) {
+            currencyIndex = 0;
+            balanceData.data[currencyIndex].coinType = 'CHIPS';
+            balanceData.data[currencyIndex].currency = 'CHIPS';
+        }
         const amountNum = Number(betAmount) || 0;
         // Deducting bet (positive) or crediting (negative)
         if (amountNum > 0) {
@@ -22,7 +32,7 @@ exports.updateMyBalance = async (data) => {
             }
             if (balanceData.data[currencyIndex].balance >= amountNum) {
                 if (betAmount >= 0 || type === 'finish')
-                    requestWargerAmountUpdate({ userId: userId, amount: data.betAmount, coinType: userData.currency });
+                    requestWargerAmountUpdate({ userId: userId, amount: data.betAmount, coinType: { coinType: 'CHIPS' } });
                 balanceData.data[currencyIndex].balance = balanceData.data[currencyIndex].balance - amountNum;
                 if (userData.demoMode) {
                     await models.userModel.findOneAndUpdate({ _id: userId }, { demoBalance: balanceData });

@@ -139,7 +139,11 @@ const Tier1Card = ({ userData }) => {
                 <span className={classes.CardTitleText}>Tier 1 Commission</span>
             </Box>
             <Box className={classes.AmountBox}>
-                <img className={classes.CurrencyIcon} src={`/assets/images/coins/${currency?.coinType?.toLowerCase()}.png`} alt={currency?.coinType} />
+                {currency?.coinType?.toUpperCase() === 'CHIPS' ? (
+                    <span className={classes.CurrencyIcon}>💎</span>
+                ) : (
+                    <img className={classes.CurrencyIcon} src={`/assets/images/coins/${currency?.coinType?.toLowerCase()}.png`} alt={currency?.coinType} />
+                )}
                 <span className={classes.AmountText}>{claimAmount.toFixed(4)}</span>
             </Box>
             <Typography className={classes.ClaimText}>Total Wagered</Typography>

@@ -753,7 +753,11 @@ const ScissorWidget = () => {
 
                 <Box className={classes.BetActionBox}>
                     <Box className={classes.AmountInputBox}>
+                        {currency?.coinType?.toUpperCase() === 'CHIPS' ? (
+                        <span className={classes.CoinItem}>💎</span>
+                    ) : (
                         <img src={`/assets/images/coins/${currency?.coinType?.toLowerCase()}.png`} alt="zelo" className={classes.CoinItem} />
+                    )}
                         <input className={classes.AmountInput} type="number" value={betAmount} onChange={handleBetAmount} />
                         <Box className={classes.AmountActionBox}>
                             <Button onClick={() => handleAmountAction(0)} className={classes.AmountActionButton}>1/2</Button>

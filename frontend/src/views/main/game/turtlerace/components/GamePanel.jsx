@@ -276,7 +276,11 @@ const GamePanel = () => {
                             <Box className={classes.BetUserItem} key={index}>
                                 <span className={classes.UserName}>{item.userNickName}</span>
                                 <Box className={classes.UserAmounBox}>
+                                    {item.coinType.coinType.toUpperCase() === 'CHIPS' ? (
+                                    <span className={classes.CurrencyIcon}>💎</span>
+                                ) : (
                                     <img src={`/assets/images/coins/${item.coinType.coinType.toLowerCase()}.png`} alt="coin icon" />
+                                )}
                                     <span>{item.betAmount}</span>
                                 </Box>
                             </Box>

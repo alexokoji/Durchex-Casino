@@ -423,6 +423,8 @@ const AuthModal = ({ open, setOpen, authType }) => {
     };
 
     // ==================== GOOGLE LOGIN ====================
+    const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+
     const googleLogin = useGoogleLogin({
         onSuccess: async (response) => {
             setIsLoading(true);
@@ -500,14 +502,16 @@ const AuthModal = ({ open, setOpen, authType }) => {
                 <img src="/assets/images/Logo.png" alt="Logo" />
             </div>
             <div className={classes.Title}>Sign In or Register</div>
-            <Button
-                className={clsx(classes.Button, classes.PrimaryButton)}
-                onClick={googleLogin}
-                disabled={isLoading}
-            >
-                <GoogleIcon style={{ width: '20px', height: '20px' }} />
-                Continue with Google
-            </Button>
+            {googleClientId && (
+                <Button
+                    className={clsx(classes.Button, classes.PrimaryButton)}
+                    onClick={googleLogin}
+                    disabled={isLoading}
+                >
+                    <GoogleIcon style={{ width: '20px', height: '20px' }} />
+                    Continue with Google
+                </Button>
+            )}
 
             <div className={classes.ORBox}>OR</div>
 

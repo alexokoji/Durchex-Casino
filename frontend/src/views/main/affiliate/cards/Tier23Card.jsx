@@ -124,7 +124,11 @@ const Tier23Card = () => {
                 <span className={classes.CardTitleText}>Total 2 & 3 Commission</span>
             </Box>
             <Box className={classes.AmountBox}>
-                <img className={classes.CurrencyIcon} src={`/assets/images/coins/${currency?.coinType?.toLowerCase()}.png`} alt={currency?.coinType} />
+                {currency?.coinType?.toUpperCase() === 'CHIPS' ? (
+                    <span className={classes.CurrencyIcon}>💎</span>
+                ) : (
+                    <img className={classes.CurrencyIcon} src={`/assets/images/coins/${currency?.coinType?.toLowerCase()}.png`} alt={currency?.coinType} />
+                )}
                 <span className={classes.AmountText}>{claimAmount.toFixed(2)}</span>
             </Box>
             <Typography className={classes.ClaimText}>Commission from tiers</Typography>

@@ -30,7 +30,11 @@ const FooterCoinItem = ({ coin }) => {
 
     return (
         <Box className={classes.FooterCoinItemBox}>
+            {coinType.toUpperCase() === 'CHIPS' ? (
+            <span>💎</span>
+        ) : (
             <img src={`/assets/images/coins/${coinType.toLowerCase()}.png`} alt="icon" />
+        )}
             <span>{coinName}</span>
         </Box>
     );

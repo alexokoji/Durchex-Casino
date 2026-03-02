@@ -51,16 +51,23 @@ exports.updatePlayerBalance = async (data, warger = false) => {
         const balanceData = userData.demoMode ? (userData.demoBalance || { data: [] }) : userData.balance;
         const amountNum = Number(amount) || 0;
 
-        // For unified chips system: use first available balance entry
+        // For unified chips system: locate the CHIPS entry
         if (!balanceData.data || balanceData.data.length === 0) {
             return { status: false, message: 'No balance available' };
         }
 
-        const currencyIndex = 0; // Use first available currency as chips
+        // try to find a chips/currency entry; fall back to first slot for backwards compatibility
+        let currencyIndex = balanceData.data.findIndex(b => b.coinType === 'CHIPS' || b.currency === 'CHIPS');
+        if (currencyIndex === -1) {
+            currencyIndex = 0; // use first entry and convert it to CHIPS
+            balanceData.data[currencyIndex].coinType = 'CHIPS';
+            balanceData.data[currencyIndex].currency = 'CHIPS';
+        }
+        const entry = balanceData.data[currencyIndex];
 
         // If positive amount => deduct from user (placing bet)
         if (amountNum > 0) {
-            if (balanceData.data[currencyIndex].balance < amountNum)
+            if (entry.balance < amountNum)
                 return { status: false, message: 'Not enough balance' };
 
             if (warger) {

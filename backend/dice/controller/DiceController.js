@@ -10,17 +10,27 @@ exports.saveDiceRound = async (data) => {
 
         // Use demoBalance if in demo mode, otherwise use regular balance
         const balanceData = userData.demoMode ? (userData.demoBalance || { data: [] }) : userData.balance;
-        const currencyIndex = balanceData.data.findIndex(item => (item.coinType === userData.currency.coinType && item.type === userData.currency.type));
+        if (!balanceData.data || balanceData.data.length === 0) {
+            return { status: false, message: 'No balance available' };
+        }
+
+        // unified chips support: look for CHIPS entry or coerce first slot
+        let currencyIndex = balanceData.data.findIndex(b => b.coinType === 'CHIPS' || b.currency === 'CHIPS');
+        if (currencyIndex === -1) {
+            currencyIndex = 0;
+            balanceData.data[currencyIndex].coinType = 'CHIPS';
+            balanceData.data[currencyIndex].currency = 'CHIPS';
+        }
+
         if (balanceData.data[currencyIndex].balance < Number(data.betAmount)) {
             return { status: false, message: 'Not enough balance' };
-        }
-        else {
-            requestWargerAmountUpdate({ userId: data.userId, amount: data.betAmount, coinType: userData.currency });
+        } else {
+            requestWargerAmountUpdate({ userId: data.userId, amount: data.betAmount, coinType: { coinType: 'CHIPS' } });
             const roundData = await new models.diceRoundModel({
                 roundNumber: data.roundNumber,
                 userId: data.userId,
                 betAmount: data.betAmount,
-                coinType: data.coinType,
+                coinType: 'CHIPS',
                 difficulty: data.difficulty,
                 isOver: data.isOver,
                 payout: data.payout,

@@ -15,12 +15,21 @@ exports.updateMyBalance = async (data) => {
 
         // Use demoBalance if in demo mode, otherwise use regular balance
         const balanceData = userData.demoMode ? (userData.demoBalance || { data: [] }) : userData.balance;
-        const currencyIndex = balanceData.data.findIndex(item => (item.coinType === userData.currency.coinType && item.type === userData.currency.type));
+        if (!balanceData.data || balanceData.data.length === 0) {
+            return { status: false, message: 'No balance available' };
+        }
+        // find or convert CHIPS entry
+        let currencyIndex = balanceData.data.findIndex(b => b.coinType === 'CHIPS' || b.currency === 'CHIPS');
+        if (currencyIndex === -1) {
+            currencyIndex = 0;
+            balanceData.data[currencyIndex].coinType = 'CHIPS';
+            balanceData.data[currencyIndex].currency = 'CHIPS';
+        }
         if (balanceData.data[currencyIndex].balance < Number(balance)) {
             return { status: false, message: 'Not enough balance' };
         }
         else {
-            requestWargerAmountUpdate({ userId: userId, amount: balance, coinType: userData.currency });
+            requestWargerAmountUpdate({ userId: userId, amount: balance, coinType: { coinType: 'CHIPS' } });
             if (balanceData.data[currencyIndex].balance >= Number(balance)) {
                 balanceData.data[currencyIndex].balance = balanceData.data[currencyIndex].balance - Number(balance);
                 if (userData.demoMode) {
@@ -47,7 +56,13 @@ exports.updateBalances = async (data) => {
             const userData = await models.userModel.findOne({ _id: betUser.userId });
             // Use demoBalance if in demo mode, otherwise use regular balance
             const balanceData = userData.demoMode ? (userData.demoBalance || { data: [] }) : userData.balance;
-            const currencyIndex = balanceData.data.findIndex(item => (item.coinType === userData.currency.coinType && item.type === userData.currency.type));
+            if (!balanceData.data || balanceData.data.length === 0) return;
+            let currencyIndex = balanceData.data.findIndex(b => b.coinType === 'CHIPS' || b.currency === 'CHIPS');
+            if (currencyIndex === -1) {
+                currencyIndex = 0;
+                balanceData.data[currencyIndex].coinType = 'CHIPS';
+                balanceData.data[currencyIndex].currency = 'CHIPS';
+            }
             balanceData.data[currencyIndex].balance = balanceData.data[currencyIndex].balance + betUser.profit;
             if (userData.demoMode) {
                 await models.userModel.findOneAndUpdate({ _id: betUser.userId }, { demoBalance: balanceData });

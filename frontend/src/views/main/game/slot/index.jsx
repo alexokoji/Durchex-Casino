@@ -464,7 +464,7 @@ const SlotGame = () => {
                             <Typography className={classes.CommonLabel}>Bet Amount</Typography>
                             <Box className={classes.InputBackground}>
                                 <Box className={classes.InputBox}>
-                                    <img className={classes.CurrencyIcon} src="/assets/images/coins/chips.png" alt="chips" />
+                                    <span className={classes.CurrencyIcon}>💎</span>
                                     <input disabled={playLoading} type="number" value={betAmount} onChange={(e) => setBetAmount(e.target.value)} className={classes.BetAmountInput} />
                                     <Box className={classes.AmountActionBox}>
                                         <Button disabled={playLoading} onClick={() => handleAmountAction(0)} className={classes.AmountActionButton}>1/2</Button>

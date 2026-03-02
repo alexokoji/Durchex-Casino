@@ -619,7 +619,11 @@ const MainHeader = () => {
                                     
                                     return (
                                         <MenuItem key={index} value={JSON.stringify({ coinType: currency.name, type: currencyBalance?.type || currency.token })} className={classes.CustomMenuItem}>
-                                            <img className={classes.CurrencyIcon} src={`/assets/images/coins/${currency.name.toLowerCase()}.png`} alt='icon' />
+                                            {currency.name.toUpperCase() === 'CHIPS' ? (
+                                                <span className={classes.CurrencyIcon}>💎</span>
+                                            ) : (
+                                                <img className={classes.CurrencyIcon} src={`/assets/images/coins/${currency.name.toLowerCase()}.png`} alt='icon' />
+                                            )}
                                             <span className={classes.CoinAmountSpan}>
                                                 {
                                                     (currencyBalance?.balance || 0).toFixed(currency.decimal)

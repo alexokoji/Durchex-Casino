@@ -283,7 +283,11 @@ const SwapContainer = () => {
                                     <MenuItem key={index} value={index} className={classes.CustomMenuItem}>
                                         <span>{currency.fullName}</span>
                                         <Box className={classes.BalanceBox}>
-                                            <img className={classes.CurrencyIcon} src={`/assets/images/coins/${currency.name.toLowerCase()}.png`} alt='icon' />
+                                            {currency.name.toUpperCase() === 'CHIPS' ? (
+                                                <span className={classes.CurrencyIcon}>💎</span>
+                                            ) : (
+                                                <img className={classes.CurrencyIcon} src={`/assets/images/coins/${currency.name.toLowerCase()}.png`} alt='icon' />
+                                            )}
                                             <span>{Number(balanceData[index].balance).toFixed(currency.decimal)}</span>
                                         </Box>
                                     </MenuItem>
@@ -296,7 +300,11 @@ const SwapContainer = () => {
                     <Typography className={classes.SwapFormTitle}>Amount
                         <span className={classes.BalanceLabel}>
                             &nbsp;(&nbsp;Balance:
-                            <img src={`/assets/images/coins/${currencies[fromCurrency].name.toLowerCase()}.png`} alt={currencies[fromCurrency].name} />
+                            {currencies[fromCurrency].name.toUpperCase() === 'CHIPS' ? (
+                                <span>💎</span>
+                            ) : (
+                                <img src={`/assets/images/coins/${currencies[fromCurrency].name.toLowerCase()}.png`} alt={currencies[fromCurrency].name} />
+                            )}
                             {
                                 Number(balanceData[fromCurrency].balance).toFixed(currencies[fromCurrency].decimal)
                             }
@@ -304,7 +312,11 @@ const SwapContainer = () => {
                         </span>
                     </Typography>
                     <Box className={classes.BalanceInputBox}>
-                        <img src={`/assets/images/coins/${currencies[fromCurrency].name.toLowerCase()}.png`} alt={currencies[fromCurrency].name} />
+                        {currencies[fromCurrency].name.toUpperCase() === 'CHIPS' ? (
+                            <span>💎</span>
+                        ) : (
+                            <img src={`/assets/images/coins/${currencies[fromCurrency].name.toLowerCase()}.png`} alt={currencies[fromCurrency].name} />
+                        )}
                         <input type="number" className={classes.BalanceInput} value={swapAmount} onChange={(e) => handleSwapAmount(e.target.value)} />
                         <Button className={classes.MaxButton}>Max</Button>
                     </Box>
@@ -337,7 +349,11 @@ const SwapContainer = () => {
                 <Box className={classes.SwapFormBox}>
                     <Typography className={classes.SwapFormTitle}>Amount</Typography>
                     <Box className={clsx(classes.BalanceInputBox, classes.DisabledInputBox)}>
-                        <img src={`/assets/images/coins/${currencies[toCurrency].name.toLowerCase()}.png`} alt={currencies[toCurrency].name} />
+                        {currencies[toCurrency].name.toUpperCase() === 'CHIPS' ? (
+                            <span>💎</span>
+                        ) : (
+                            <img src={`/assets/images/coins/${currencies[toCurrency].name.toLowerCase()}.png`} alt={currencies[toCurrency].name} />
+                        )}
                         <input disabled className={classes.BalanceInput} value={swapedAmount} onChange={(e) => handleSwapedAmount(e.target.value)} />
                     </Box>
                 </Box>
