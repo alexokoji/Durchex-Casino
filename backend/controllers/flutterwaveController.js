@@ -4,7 +4,10 @@ const FlutterwaveTransactionModel = require('../models/FlutterwaveTransactionMod
 const UnifiedPaymentModel = require('../models/UnifiedPaymentModel');
 const UserModel = require('../models/UserModel');
 
-const FLUTTERWAVE_API_KEY = process.env.FLUTTERWAVE_API_KEY;
+// Prefer the secret key for API calls (Authorization), fallback to the public var if needed
+const FLUTTERWAVE_API_KEY = process.env.FLUTTERWAVE_SECRET_KEY || process.env.FLUTTERWAVE_API_KEY;
+// Public key used for client-side / hosted links
+const FLUTTERWAVE_PUBLIC_KEY = process.env.FLUTTERWAVE_PUBLIC_KEY;
 // base URL should point to staging unless explicitly set to production/live
 const FLUTTERWAVE_BASE_URL = ['production','live'].includes(process.env.FLUTTERWAVE_ENV)
     ? 'https://api.flutterwave.com/v3'
@@ -162,7 +165,9 @@ exports.initiateDeposit = async (req, res) => {
             redirect_url: `${APP_BASE_URL}/payment/verify?tid=${fwSaved._id}`
         };
 
-        console.log(`📤 Initiating Flutterwave API call for ${currency} ${amount}...`);
+        // Log which key type is being used (secret vs public) for easier debugging
+        const keyType = FLUTTERWAVE_API_KEY && FLUTTERWAVE_API_KEY.startsWith('FLWSECK') ? 'secret' : (FLUTTERWAVE_API_KEY && FLUTTERWAVE_API_KEY.startsWith('FLWPUBK') ? 'public' : 'unknown');
+        console.log(`📤 Initiating Flutterwave API call for ${currency} ${amount}... (using ${keyType} key)`);
 
         let flutterwaveResponse;
         try {
