@@ -55,7 +55,7 @@ export default function FiatDepositModal({ open, onClose }) {
     if (!amount) return setMessage({ type: 'error', text: 'Enter amount' });
     setLoading(true);
     try {
-      const res = await axios.post(`${API_URL}/api/v0/payments/fiat/deposit`, {
+      const res = await axios.post(`${API_URL}/v0/payments/fiat/deposit`, {
         userId,
         amount: parseFloat(amount),
 
