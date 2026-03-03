@@ -26,7 +26,6 @@ export default function DepositModal({ open, onClose, initialTab = 'fiat' }) {
 
   // Fiat fields
   const [fiatAmount, setFiatAmount] = useState('');
-  const [fiatCurrency, setFiatCurrency] = useState('USD');
 
   // Crypto fields
   const [coin, setCoin] = useState('ETH');
@@ -56,7 +55,6 @@ export default function DepositModal({ open, onClose, initialTab = 'fiat' }) {
       const res = await axios.post(`${API_URL}/api/v0/payments/fiat/deposit`, {
         userId,
         amount: parseFloat(fiatAmount),
-        currency: fiatCurrency,
         paymentMethod: 'flutterwave'
       });
       console.log('fiat deposit response:', res.data);
@@ -146,21 +144,6 @@ export default function DepositModal({ open, onClose, initialTab = 'fiat' }) {
         {tab === 0 && (
           <Box>
             <TextField label="Amount" value={fiatAmount} onChange={(e) => setFiatAmount(e.target.value)} fullWidth size="small" sx={{ mb: 2, input: { color: '#fff' } }} />
-            <TextField
-              select
-              label="Currency"
-              value={fiatCurrency}
-              onChange={(e) => setFiatCurrency(e.target.value)}
-              fullWidth
-              size="small"
-              sx={{ mb: 2, input: { color: '#fff' } }}
-              SelectProps={{ native: true }}
-            >
-              <option value="NGN">NGN - Nigerian Naira</option>
-              <option value="USD">USD - US Dollar</option>
-              <option value="EUR">EUR - Euro</option>
-              <option value="GBP">GBP - British Pound</option>
-            </TextField>
             <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
               <Button variant="contained" color="secondary" onClick={handleClose}>Cancel</Button>
               <Button variant="contained" onClick={handleCreateFiat} disabled={loading}>{loading ? 'Creating...' : 'Create Deposit'}</Button>

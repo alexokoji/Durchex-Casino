@@ -182,10 +182,8 @@ export default function WalletDepositModal({ open, onClose }) {  const API_URL =
 
   // Fiat fields
   const [fiatAmount, setFiatAmount] = useState('');
-  const [fiatCurrency, setFiatCurrency] = useState('USD');
-  const [paymentMethod, setPaymentMethod] = useState('credit_card');
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
+  // remaining fiat state cleaned up, backend provides currency/payment defaults
+
 
   // Crypto fields
   const [coin, setCoin] = useState('ETH');
@@ -298,24 +296,21 @@ export default function WalletDepositModal({ open, onClose }) {  const API_URL =
     setMessage(null);
     if (!userId) return setMessage({ type: 'error', text: '❌ Please sign in' });
     if (!fiatAmount) return setMessage({ type: 'error', text: '❌ Enter amount' });
-    if (!fullName) return setMessage({ type: 'error', text: '❌ Enter full name' });
-    if (!email) return setMessage({ type: 'error', text: '❌ Enter email' });
-    if (!paymentMethod) return setMessage({ type: 'error', text: '❌ Select payment method' });
-    
     setLoading(true);
     try {
       const res = await axios.post(`${API_URL}/api/v0/payments/fiat/deposit`, {
         userId,
         amount: parseFloat(fiatAmount),
-        currency: fiatCurrency,
-        paymentMethod,
-        fullName,
-        email,
+        paymentMethod: 'flutterwave',
         isDemo: DEMO_MODE
       });
+      const link = res?.data?.paymentLink || res?.data?.data?.paymentLink || res?.data?.data?.authorizationUrl;
+      if (link) {
+        window.location.href = link;
+        return;
+      }
       setMessage({ type: 'success', text: '✅ ' + (res.data.message || 'Deposit created successfully') });
       setFiatAmount('');
-      setFullName('');
     } catch (err) {
       setMessage({ type: 'error', text: '❌ ' + (err?.response?.data?.message || err.message) });
     } finally {
@@ -489,39 +484,7 @@ export default function WalletDepositModal({ open, onClose }) {  const API_URL =
               <Box sx={formCardStyle}>
                 <Typography variant="caption" sx={{ color: '#999', mb: 1, display: 'block' }}>DEPOSIT DETAILS</Typography>
                 <Divider sx={{ borderColor: 'rgba(90, 69, 209, 0.2)', mb: 2 }} />
-                
                 <TextField label="Amount" value={fiatAmount} onChange={(e) => setFiatAmount(e.target.value)} fullWidth size="small" type="number" sx={{ mb: 2, ...inputStyle }} placeholder="0.00" />
-                
-                <FormControl fullWidth size="small" sx={{ mb: 2, ...inputStyle }}>
-                  <InputLabel>Currency</InputLabel>
-                  <Select value={fiatCurrency} onChange={(e) => setFiatCurrency(e.target.value)} label="Currency">
-                    <MenuItem value="USD">USD - US Dollar</MenuItem>
-                    <MenuItem value="EUR">EUR - Euro</MenuItem>
-                    <MenuItem value="GBP">GBP - British Pound</MenuItem>
-                    <MenuItem value="JPY">JPY - Japanese Yen</MenuItem>
-                  </Select>
-                </FormControl>
-
-                <FormControl fullWidth size="small" sx={{ mb: 2, ...inputStyle }}>
-                  <InputLabel>Payment Method</InputLabel>
-                  <Select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} label="Payment Method" disabled={DEMO_MODE}>
-                    <MenuItem value="credit_card">💳 Credit Card</MenuItem>
-                    <MenuItem value="debit_card">🏧 Debit Card</MenuItem>
-                    <MenuItem value="bank_transfer">🏦 Bank Transfer</MenuItem>
-                  </Select>
-                  {DEMO_MODE && (
-                    <Typography variant="caption" sx={{ color: '#FFC107', mt: 1 }}>Demo mode enabled — real payments disabled</Typography>
-                  )}
-                </FormControl>
-              </Box>
-
-              <Box sx={formCardStyle}>
-                <Typography variant="caption" sx={{ color: '#999', mb: 1, display: 'block' }}>PERSONAL INFORMATION</Typography>
-                <Divider sx={{ borderColor: 'rgba(90, 69, 209, 0.2)', mb: 2 }} />
-                
-                <TextField label="Full Name" value={fullName} onChange={(e) => setFullName(e.target.value)} fullWidth size="small" sx={{ mb: 2, ...inputStyle }} placeholder="John Doe" />
-                
-                <TextField label="Email" value={email} onChange={(e) => setEmail(e.target.value)} fullWidth size="small" type="email" sx={{ mb: 2, ...inputStyle }} placeholder="your@email.com" />
               </Box>
 
               <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>

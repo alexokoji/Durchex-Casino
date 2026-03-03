@@ -16,15 +16,17 @@ const config = require('../config');
 // Initialize Flutterwave payment
 exports.initiateDeposit = async (req, res) => {
     try {
-        let { userId, amount, currency, paymentMethod, email } = req.body;
+        let { userId, amount, paymentMethod, email } = req.body;
+        // currency no longer provided by frontend; use env default
+        let currency = process.env.FLUTTERWAVE_DEFAULT_CURRENCY || 'USD';
 
         // default to flutterwave if caller didn't supply a method
         if (!paymentMethod) paymentMethod = 'flutterwave';
 
-        if (!userId || !amount || !currency) {
+        if (!userId || !amount) {
             return res.status(400).json({ 
                 status: false, 
-                message: 'Missing required fields: userId, amount, currency' 
+                message: 'Missing required fields: userId and amount' 
             });
         }
 

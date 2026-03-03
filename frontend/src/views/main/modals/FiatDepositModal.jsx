@@ -26,7 +26,6 @@ export default function FiatDepositModal({ open, onClose }) {
   const userId = auth?.userData?._id;
 
   const [amount, setAmount] = useState('');
-  const [currency, setCurrency] = useState('USD');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
 
@@ -59,7 +58,7 @@ export default function FiatDepositModal({ open, onClose }) {
       const res = await axios.post(`${API_URL}/api/v0/payments/fiat/deposit`, {
         userId,
         amount: parseFloat(amount),
-        currency,
+
         paymentMethod: 'flutterwave'
       });
       // if the backend returned an authorization link, take the user there
@@ -104,7 +103,7 @@ export default function FiatDepositModal({ open, onClose }) {
               Current Balance
             </Typography>
             <Typography sx={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#BA6AFF' }}>
-              {currentBalance.toFixed(2)} {currency}
+              {currentBalance.toFixed(2)}
             </Typography>
           </CardContent>
         </Card>
@@ -129,35 +128,6 @@ export default function FiatDepositModal({ open, onClose }) {
           }}
           inputProps={{ min: '1', step: '0.01' }}
         />
-
-        <TextField
-          select
-          label="Currency"
-          value={currency}
-          onChange={(e) => setCurrency(e.target.value)}
-          fullWidth
-          size="small"
-          sx={{ 
-            mb: 2,
-            '& .MuiOutlinedInput-root': {
-              color: '#fff'
-            },
-            '& .MuiOutlinedInput-notchedOutline': {
-              borderColor: '#424253'
-            },
-            '& .MuiSvgIcon-root': {
-              color: '#fff'
-            }
-          }}
-          SelectProps={{
-            native: true,
-          }}
-        >
-          <option value="NGN">NGN - Nigerian Naira</option>
-          <option value="USD">USD - US Dollar</option>
-          <option value="EUR">EUR - Euro</option>
-          <option value="GBP">GBP - British Pound</option>
-        </TextField>
 
         <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
           <Button variant="outlined" onClick={onClose} sx={{ color: '#fff', borderColor: '#424253' }}>
