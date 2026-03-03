@@ -590,7 +590,7 @@ const MainHeader = () => {
                     <MobileMenuCollapeIcon />
                 </IconButton> */}
                 {/* <LogoIcon className={classes.LogoIcon} /> */}
-                <img src={`/assets/images/Logo.png`} className={classes.LogoIcon} alt="Logo" />
+                <img src="/logo.png" className={classes.LogoIcon} alt="Logo" />
                 {process.env.REACT_APP_DEMO_MODE === 'true' && (
                     <Box className={classes.DemoBadge}>
                         🎮 DEMO MODE

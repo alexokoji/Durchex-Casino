@@ -499,7 +499,7 @@ const AuthModal = ({ open, setOpen, authType }) => {
     const renderLoginChoice = () => (
         <>
             <div className={classes.ModalLogoBox}>
-                <img src="/assets/images/Logo.png" alt="Logo" />
+                <img src="/logo.png" alt="Logo" />
             </div>
             <div className={classes.Title}>Sign In or Register</div>
             {googleClientId && (
@@ -558,7 +558,7 @@ const AuthModal = ({ open, setOpen, authType }) => {
     const renderEmailInput = () => (
         <>
             <div className={classes.ModalLogoBox}>
-                <img src="/assets/images/Logo.png" alt="Logo" />
+                <img src="/logo.png" alt="Logo" />
             </div>
             <div className={classes.Title}>Enter Your Email</div>
             <div className={classes.InputBox}>
@@ -594,7 +594,7 @@ const AuthModal = ({ open, setOpen, authType }) => {
     const renderEmailCode = () => (
         <>
             <div className={classes.ModalLogoBox}>
-                <img src="/assets/images/Logo.png" alt="Logo" />
+                <img src="/logo.png" alt="Logo" />
             </div>
             <div className={classes.Title}>Verify Your Email</div>
             <div style={{ marginBottom: '15px', color: '#999', textAlign: 'center' }}>
@@ -633,7 +633,7 @@ const AuthModal = ({ open, setOpen, authType }) => {
     const renderProfileSetup = () => (
         <>
             <div className={classes.ModalLogoBox}>
-                <img src="/assets/images/Logo.png" alt="Logo" />
+                <img src="/logo.png" alt="Logo" />
             </div>
             <div className={classes.Title}>Complete Your Profile</div>
 
@@ -662,7 +662,7 @@ const AuthModal = ({ open, setOpen, authType }) => {
     const renderSuccess = () => (
         <>
             <div className={classes.ModalLogoBox}>
-                <img src="/assets/images/Logo.png" alt="Logo" />
+                <img src="/logo.png" alt="Logo" />
             </div>
             <div className={classes.Title}>✓ Welcome!</div>
             <div style={{ color: '#4ade80', textAlign: 'center' }}>
