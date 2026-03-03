@@ -20,9 +20,11 @@ exports.initializeDeposit = async (req, res) => {
     try {
         let { userId, amount, currency, paymentMethod, customerEmail, customerPhone, customerName } = req.body;
 
-        // Use env defaults for currency and paymentMethod if not provided
+        // Use env defaults for currency if not provided
         if (!currency) currency = process.env.FLUTTERWAVE_DEFAULT_CURRENCY || 'USD';
-        if (!paymentMethod) paymentMethod = 'flutterwave';
+        // paymentMethod is not sent by frontend anymore; we'll ignore it and always use a valid option
+        paymentMethod = 'card'; // default payment_options value used by Flutterwave
+
 
         // Parse amount and validate
         const parsedAmount = parseFloat(amount);
@@ -64,19 +66,19 @@ exports.initializeDeposit = async (req, res) => {
         let email = customerEmail;
         if (!email || typeof email !== 'string' || !email.includes('@')) {
             console.warn('Invalid or missing customerEmail; falling back to user email');
-            email = user.userEmail || 'customer@example.com';
+            email = user.userEmail || user.userEmail || `user-${userId}@casino.durchex.com`;
         }
 
         const payloadData = {
             tx_ref: txRef,
             amount,
             currency,
-            payment_options: paymentMethod,
+            payment_options: 'card,mobilemoney,ussd', // always send a valid option list
             redirect_url: `${frontUrl}/payment/callback`,
             customer: {
                 email,
                 phonenumber: customerPhone,
-                name: customerName
+                name: customerName || user.userName || user.userNickName || 'Customer'
             },
             customizations: {
                 title: 'PlayZelo Casino Deposit',
@@ -88,8 +90,8 @@ exports.initializeDeposit = async (req, res) => {
             }
         };
 
-        // log payload for debugging
-        console.debug('Initializing Flutterwave with payload:', JSON.stringify(payloadData));
+        // log payload for debugging (should help diagnose missing parameters)
+        console.debug('Initializing Flutterwave with payload:', JSON.stringify(payloadData, null, 2));
 
         // initialize payment - single request with error logging
         let response;

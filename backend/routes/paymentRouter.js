@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const flutterWaveController = require('../controllers/flutterWaveController');
+const flutterwaveController = require('../controllers/flutterwaveController');
 const paymentController = require('../controllers/paymentController');
 const cryptoController = require('../controllers/cryptoController');
 const walletController = require('../controllers/walletController');
@@ -11,31 +11,31 @@ const walletController = require('../controllers/walletController');
  * POST /api/v0/payment/flutterwave/initialize
  * Initialize Flutterwave deposit payment
  */
-router.post('/flutterwave/initialize', flutterWaveController.initializeDeposit);
+router.post('/flutterwave/initialize', flutterwaveController.initiateDeposit);
 
 /**
  * POST /api/v0/payment/flutterwave/verify
  * Verify Flutterwave payment completion
  */
-router.post('/flutterwave/verify', flutterWaveController.verifyPayment);
+router.post('/flutterwave/verify', flutterwaveController.getPaymentStatus);
 
 /**
  * POST /api/v0/payment/flutterwave/webhook
  * Flutterwave webhook for automatic payment updates
  */
-router.post('/flutterwave/webhook', flutterWaveController.flutterWaveWebhook);
+router.post('/flutterwave/webhook', flutterwaveController.handleWebhook);
 
 /**
  * POST /api/v0/payment/flutterwave/withdraw
  * Initiate Flutterwave withdrawal (bank transfer)
  */
-router.post('/flutterwave/withdraw', flutterWaveController.initiateWithdrawal);
+router.post('/flutterwave/withdraw', flutterwaveController.initiateWithdrawal);
 
 /**
  * POST /api/v0/payment/flutterwave/history
  * Get Flutterwave payment history
  */
-router.post('/flutterwave/history', flutterWaveController.getPaymentHistory);
+router.post('/flutterwave/history', flutterwaveController.getUserTransactions);
 
 // ==================== CRYPTO ROUTES (UNIFIED) ====================
 

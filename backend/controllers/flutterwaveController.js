@@ -146,16 +146,23 @@ exports.initiateDeposit = async (req, res) => {
         fwTransaction.unifiedPaymentId = unifiedSaved._id;
         await fwTransaction.save();
 
+        // Ensure customer has valid email - CRITICAL REQUIRED FIELD FOR FLUTTERWAVE
+        let customerEmail = email || user.email || user.userEmail;
+        if (!customerEmail || typeof customerEmail !== 'string' || !customerEmail.includes('@')) {
+            console.warn('⚠️ No valid email found, using fallback');
+            customerEmail = `user-${userId}@casino.durchex.com`;
+        }
+
         // Prepare Flutterwave API payload
+        // NOTE: DO NOT include public_key in the body when using Authorization header with secret key
         const flutterwavePayload = {
-            public_key: process.env.FLUTTERWAVE_PUBLIC_KEY,
             tx_ref: `FW-${fwSaved._id}`,
             amount: parseFloat(amount),
             currency: currency,
             payment_options: 'card,mobilemoney,ussd',
             customer: {
-                email: email || user.email,
-                name: user.username || 'Customer'
+                email: customerEmail,
+                name: user.username || user.userName || 'Customer'
             },
             customizations: {
                 title: 'PlayZelo Casino Deposit',
@@ -168,6 +175,8 @@ exports.initiateDeposit = async (req, res) => {
         // Log which key type is being used (secret vs public) for easier debugging
         const keyType = FLUTTERWAVE_API_KEY && FLUTTERWAVE_API_KEY.startsWith('FLWSECK') ? 'secret' : (FLUTTERWAVE_API_KEY && FLUTTERWAVE_API_KEY.startsWith('FLWPUBK') ? 'public' : 'unknown');
         console.log(`📤 Initiating Flutterwave API call for ${currency} ${amount}... (using ${keyType} key)`);
+        console.log(`📋 API Payload:`, JSON.stringify(flutterwavePayload, null, 2));
+        console.log(`🔑 Authorization header: Bearer ${FLUTTERWAVE_API_KEY ? FLUTTERWAVE_API_KEY.substring(0, 20) + '...' : 'NOT SET'}`);
 
         let flutterwaveResponse;
         try {
@@ -188,8 +197,11 @@ exports.initiateDeposit = async (req, res) => {
                 message: axiosError.message,
                 code: axiosError.code,
                 status: axiosError.response?.status,
+                statusText: axiosError.response?.statusText,
                 data: axiosError.response?.data
             });
+            console.error(`📊 Full error response:`, JSON.stringify(axiosError.response?.data, null, 2));
+            console.error(`📤 Sent payload was:`, JSON.stringify(flutterwavePayload, null, 2));
 
             // Check if it's a network error or auth error - fallback for both
             const isNetworkError = axiosError.code === 'ECONNREFUSED' || axiosError.code === 'ETIMEDOUT' || axiosError.code === 'EHOSTUNREACH';
