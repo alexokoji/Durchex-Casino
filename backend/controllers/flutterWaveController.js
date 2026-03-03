@@ -18,11 +18,19 @@ const FLUTTERWAVE_PUBLIC_KEY = process.env.FLUTTERWAVE_PUBLIC_KEY;
  */
 exports.initializeDeposit = async (req, res) => {
     try {
-        const { userId, amount, currency, paymentMethod, customerEmail, customerPhone, customerName } = req.body;
+        let { userId, amount, currency, paymentMethod, customerEmail, customerPhone, customerName } = req.body;
 
-        if (!userId || !amount || !currency || !paymentMethod) {
-            return res.json({ status: false, message: 'Missing required fields' });
+        // Use env defaults for currency and paymentMethod if not provided
+        if (!currency) currency = process.env.FLUTTERWAVE_DEFAULT_CURRENCY || 'USD';
+        if (!paymentMethod) paymentMethod = 'flutterwave';
+
+        // Parse amount and validate
+        const parsedAmount = parseFloat(amount);
+        if (!userId || isNaN(parsedAmount) || parsedAmount <= 0) {
+            console.warn('🚨 invalid deposit request', { userId, amount });
+            return res.json({ status: false, message: 'Missing required fields: userId and amount (>0) are required', received: { userId, amount } });
         }
+        amount = parsedAmount;
 
         const user = await models.userModel.findById(userId);
         if (!user) {
