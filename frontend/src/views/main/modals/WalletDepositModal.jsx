@@ -249,7 +249,8 @@ export default function WalletDepositModal({ open, onClose }) {  const API_URL =
     if (!userId) return;
     setLoading(true);
     try {
-      const res = await axios.get(`${API_URL}/v0/payments/fiat/transactions/${userId}`);
+      const url = `${API_URL}/api/v0/payments/fiat/transactions/${userId}`.replace(/\/\/api/, '/api');
+      const res = await axios.get(url);
       setHistory(res.data || []);
     } catch (err) {
       setHistory([]);
@@ -297,7 +298,8 @@ export default function WalletDepositModal({ open, onClose }) {  const API_URL =
     if (!fiatAmount) return setMessage({ type: 'error', text: '❌ Enter amount' });
     setLoading(true);
     try {
-      const res = await axios.post(`${API_URL}/v0/payments/fiat/deposit`, {
+      const url = `${API_URL}/api/v0/payments/fiat/deposit`.replace(/\/\/api/, '/api');
+      const res = await axios.post(url, {
         userId,
         amount: parseFloat(fiatAmount),
         paymentMethod: 'flutterwave',
@@ -322,7 +324,8 @@ export default function WalletDepositModal({ open, onClose }) {  const API_URL =
     if (!userId) return setMessage({ type: 'error', text: '❌ Please sign in' });
     setLoading(true);
     try {
-      const res = await axios.post(`${API_URL}/v0/payments/crypto/generate-address`, {
+      const url = `${API_URL}/api/v0/payments/crypto/generate-address`.replace(/\/\/api/, '/api');
+      const res = await axios.post(url, {
         userId,
         coinType: coin,
         isDemo: DEMO_MODE
