@@ -226,7 +226,6 @@ export default function WalletDepositModal({ open, onClose }) {  const API_URL =
 
   useEffect(() => {
     if (auth?.userData?.email) {
-      setEmail(auth.userData.email);
       setWithdrawEmail(auth.userData.email);
     }
   }, [auth?.userData?.email]);
