@@ -16,6 +16,9 @@ const config = require('../config');
 // Initialize Flutterwave payment
 exports.initiateDeposit = async (req, res) => {
     try {
+        // dump body for troubleshooting (will show up in logs)
+        console.log('💡 initiateDeposit called with body:', req.body);
+
         let { userId, amount, paymentMethod, email } = req.body;
         // currency no longer provided by frontend; use env default
         let currency = process.env.FLUTTERWAVE_DEFAULT_CURRENCY || 'USD';
@@ -23,12 +26,17 @@ exports.initiateDeposit = async (req, res) => {
         // default to flutterwave if caller didn't supply a method
         if (!paymentMethod) paymentMethod = 'flutterwave';
 
-        if (!userId || !amount) {
+        // ensure userId and numeric amount are present and amount positive
+        const parsedAmount = parseFloat(amount);
+        if (!userId || isNaN(parsedAmount) || parsedAmount <= 0) {
+            console.warn('🚨 invalid deposit request', { userId, amount });
             return res.status(400).json({ 
                 status: false, 
-                message: 'Missing required fields: userId and amount' 
+                message: 'Missing or invalid fields: userId and amount (>0) are required',
+                received: { userId, amount }
             });
         }
+        amount = parsedAmount;
 
         const user = await UserModel.findById(userId);
         if (!user) {
