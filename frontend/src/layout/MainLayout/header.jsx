@@ -62,6 +62,8 @@ const useStyles = makeStyles(() => ({
         gap: '21px'
     },
     LogoIcon: {
+        width: '120px',
+        height: 'auto',
         "@media (max-width: 1024px)": {
             display: 'none'
         }
