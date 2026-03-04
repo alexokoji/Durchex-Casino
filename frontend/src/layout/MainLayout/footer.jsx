@@ -116,7 +116,7 @@ const MainFooter = () => {
             <Box className={classes.CopyRightBox}>
                 <Box sx={{display:'flex', alignItems:'center', gap:'20px'}}>
                     <img src="/logo.png" className={classes.LogoIcon} alt="Logo" style={{width:'120px',height:'auto'}} />
-                    <Link to="/faq" style={{color:'#CCC', textDecoration:'underline'}}>FAQ</Link>
+                    <Link to="/app/faq" style={{color:'#CCC', textDecoration:'underline'}}>FAQ</Link>
                 </Box>
                 <span className={classes.CopyRightText}>copyright ©2023</span>
                 <Box className={classes.ContactBox}>
