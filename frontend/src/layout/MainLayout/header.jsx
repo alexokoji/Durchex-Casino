@@ -348,9 +348,10 @@ const MainHeader = () => {
     const { addToast } = useToasts();
 
     const modalOption = useSelector((state) => state.modalOption);
-    const authData = useSelector((state) => state.authentication);
-    const currencyData = useSelector((state) => state.currencyOption);
-    const currencies = currencyData.currencies;
+    // ensure we always have an object for authentication slice
+    const authData = useSelector((state) => state.authentication || {});
+    const currencyData = useSelector((state) => state.currencyOption || { currencies: [] });
+    const currencies = currencyData.currencies || [];
 
     const [authModalOpen, setAuthModalOpen] = useState(false);
     const [signoutModalOpen, setSignoutModalOpen] = useState(false);
@@ -363,7 +364,7 @@ const MainHeader = () => {
     const privacyModalOpen = modalOption.privacyModal;
 
     const [authType, setAuthType] = useState(0);
-    const currency = authData.isAuth ? authData.userData.currency : '';
+    const currency = authData?.isAuth ? authData.userData?.currency : '';
 
     // Wallet modal state
     const walletDepositModalOpen = walletModalOpen;
@@ -397,13 +398,13 @@ const MainHeader = () => {
     // Monitor auth state changes
     useEffect(() => {
         console.log('👀 Header watching authData changes:', {
-            isAuth: authData.isAuth,
-            hasUserData: !!authData.userData,
-            balanceDataCount: authData.balanceData ? Object.keys(authData.balanceData).length : 0,
-            userData_id: authData.userData?._id
+            isAuth: authData?.isAuth,
+            hasUserData: !!authData?.userData,
+            balanceDataCount: authData?.balanceData ? Object.keys(authData.balanceData).length : 0,
+            userData_id: authData?.userData?._id
         });
         console.log('📱 Full authData object:', authData);
-    }, [authData.isAuth, authData.userData, authData.balanceData]);
+    }, [authData?.isAuth, authData?.userData, authData?.balanceData]);
 
     // Monitor modal state
     useEffect(() => {
@@ -528,9 +529,9 @@ const MainHeader = () => {
     };
 
     const updatePlayerCurrency = async (newCurrency) => {
-        if (authData.isAuth) {
+        if (authData?.isAuth) {
             const request = {
-                userId: authData.userData._id,
+                userId: authData?.userData?._id,
                 currency: JSON.parse(newCurrency),
             };
             const response = await updateCurrency(request);
@@ -576,14 +577,14 @@ const MainHeader = () => {
                         // On mobile, toggle on click
                         setWalletDropdownOpen(!walletDropdownOpen);
                     }} sx={{ position: 'relative' }}>
-                        <Button className={clsx(classes.HeaderButton, classes.WalletButton)} disabled={!authData.isAuth} onClick={handleWalletOpen}>
+                        <Button className={clsx(classes.HeaderButton, classes.WalletButton)} disabled={!authData?.isAuth} onClick={handleWalletOpen}>
                             <span>Wallet</span>
                         </Button>
                         <IconButton className={classes.MobileWalletButton} disabled={!authData.isAuth} onClick={handleWalletOpen}>
                             <MobileWalletIcon />
                         </IconButton>
 
-                        {walletDropdownOpen && authData.isAuth && (
+                        {walletDropdownOpen && authData?.isAuth && (
                             <Box className={classes.WalletDropdown} sx={{ right: 0 }}>
                                 <Box className={classes.BalanceRow}>
                                     <span className={classes.BalanceLabel}>Fiat Balance</span>
