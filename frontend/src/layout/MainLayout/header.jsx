@@ -4,6 +4,7 @@ import AuthenticationModal from "views/main/modals/AuthModal";
 import WalletDepositModal from "views/main/modals/WalletDepositModal";
 import clsx from "clsx";
 import { useEffect, useState, useRef } from "react";
+import { useSelector, useDispatch } from "react-redux";
 
 // load Tawk.to chat globally
 function loadTawkScript() {
@@ -18,7 +19,6 @@ function loadTawkScript() {
         s0.parentNode.insertBefore(s1,s0);
     })();
 }
-import { useSelector, useDispatch } from "react-redux";
 
 import { ReactComponent as AlarmIcon } from "assets/icons/AlarmIcon.svg";
 import { ReactComponent as ChatIcon } from "assets/icons/ChatIcon.svg";
