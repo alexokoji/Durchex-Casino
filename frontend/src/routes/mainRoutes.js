@@ -46,6 +46,9 @@ const BonusesHelp = Loadable(lazy(() => import("views/main/help/Bonuses")));
 const HowBonusWork = Loadable(lazy(() => import("views/main/help/Bonuses/DepositBonus/HowBonusWork")));
 const BonusTerms = Loadable(lazy(() => import("views/main/help/Bonuses/LockedBonus/Terms")));
 
+// stand-alone FAQ page
+const FAQPage = Loadable(lazy(() => import("views/main/faq")));
+
 const MainRoutes = [{
     path: '/',
     element: <MainLayout />,
@@ -73,6 +76,10 @@ const MainRoutes = [{
                 {
                     path: 'affiliate',
                     element: <Affiliate />
+                },
+                {
+                    path: 'faq',
+                    element: <FAQPage />
                 },
                 {
                     path: 'games',

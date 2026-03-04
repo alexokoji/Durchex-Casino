@@ -114,7 +114,10 @@ const MainFooter = () => {
             </Box>
             <Box className={classes.DividLine}></Box>
             <Box className={classes.CopyRightBox}>
-                <img src="/logo.png" className={classes.LogoIcon} alt="Logo" style={{width:'120px',height:'auto'}} />
+                <Box sx={{display:'flex', alignItems:'center', gap:'20px'}}>
+                    <img src="/logo.png" className={classes.LogoIcon} alt="Logo" style={{width:'120px',height:'auto'}} />
+                    <Link to="/faq" style={{color:'#CCC', textDecoration:'underline'}}>FAQ</Link>
+                </Box>
                 <span className={classes.CopyRightText}>copyright ©2023</span>
                 <Box className={classes.ContactBox}>
                     <Link to="https://twitter.com/memewarsx" target="_blank"><TwitterIcon /></Link>
