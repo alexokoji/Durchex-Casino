@@ -1,38 +1,42 @@
 import { Box, Typography } from "@mui/material";
 import { makeStyles } from "@mui/styles";
-import HelpTree from "../help/HelpTree";
 
 const useStyles = makeStyles(() => ({
     MainLayout: {
         width: '100%',
-        padding: '12px'
-    },
-    HelpTreeBox: {
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'flex-start'
+        padding: '30px 50px',
+        marginTop: '80px',
+        "@media (max-width: 681px)": {
+            padding: '20px'
+        }
     },
     PageTitle: {
         fontFamily: 'Styrene A Web',
         fontWeight: 900,
-        fontSize: 28,
-        lineHeight: '32px',
+        fontSize: 36,
+        lineHeight: '40px',
         textTransform: 'uppercase',
-        color: '#FFF'
+        color: '#FFF',
+        marginBottom: '40px'
+    },
+    QuestionBox: {
+        marginBottom: '30px',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+        paddingBottom: '20px'
     },
     Question: {
-        marginTop: 20,
         fontSize: 20,
         fontWeight: 700,
         color: '#FFF',
-        fontFamily: 'Styrene A Web'
+        fontFamily: 'Styrene A Web',
+        marginBottom: '10px'
     },
     Answer: {
-        marginTop: 8,
         fontSize: 16,
         fontWeight: 400,
         color: '#CCC',
-        fontFamily: 'Styrene A Web'
+        fontFamily: 'Styrene A Web',
+        lineHeight: '1.6'
     }
 }));
 
@@ -55,7 +59,7 @@ const questions = [
     },
     {
         q: 'What are the minimum and maximum bets?',
-        a: 'Bet limits vary by game. Refer to the game’s info panel for specific limits. Generally, minimum bets start at 0.0001 and maximums are displayed on each table.'
+        a: 'Bet limits vary by game. Refer to the game\'s info panel for specific limits. Generally, minimum bets start at 0.0001 and maximums are displayed on each table.'
     },
     {
         q: 'How do tournaments work?',
@@ -76,24 +80,37 @@ const questions = [
     {
         q: 'How can I contact customer support?',
         a: 'Use the live chat widget (bottom right corner) or email support@durchex.com. Our team is available 24/7.'
+    },
+    {
+        q: 'What is the house edge?',
+        a: 'House edge varies by game. Each game displays its theoretical RTP (Return to Player) which indicates the long-term payout percentage.'
+    },
+    {
+        q: 'Can I play on mobile?',
+        a: 'Yes, our platform is fully responsive and works on mobile devices. Simply access the site through your mobile browser.'
+    },
+    {
+        q: 'Is there a referral program?',
+        a: 'Yes, visit the Affiliate section to learn about our referral program and earn commissions from your friends\' play.'
+    },
+    {
+        q: 'How are my funds secured?',
+        a: 'Your crypto funds are stored in secure wallets. We use industry-standard security practices to protect all user data and transactions.'
+    },
+    {
+        q: 'What should I do if I experience technical issues?',
+        a: 'Contact our support team via the live chat, email, or check the help center. We\'re available 24/7 to assist you.'
     }
 ];
 
 const FaqPage = () => {
     const classes = useStyles();
-    const helpTreeData = [
-        { to: '/app/help', label: 'PlayZelo Support' },
-        { to: '/faq', label: 'FAQ' }
-    ];
 
     return (
         <Box className={classes.MainLayout}>
-            <Box className={classes.HelpTreeBox}>
-                <HelpTree data={helpTreeData} />
-            </Box>
-            <Typography className={classes.PageTitle}>FREQUENTLY ASKED QUESTIONS</Typography>
+            <Typography className={classes.PageTitle}>Frequently Asked Questions</Typography>
             {questions.map((item, idx) => (
-                <Box key={idx}>
+                <Box key={idx} className={classes.QuestionBox}>
                     <Typography className={classes.Question}>{item.q}</Typography>
                     <Typography className={classes.Answer}>{item.a}</Typography>
                 </Box>
