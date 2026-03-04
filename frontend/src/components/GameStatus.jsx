@@ -4,7 +4,7 @@ import { Box, Typography } from '@mui/material';
 
 // accepts a list of bet objects [{userId, betAmount, profit?}]
 const GameStatus = ({ bets }) => {
-    const authData = useSelector(state => state.auth);
+    const authData = useSelector(state => state.auth || {});
     const [playersCount, setPlayersCount] = useState(0);
     const [totalBet, setTotalBet] = useState(0);
     const [myTotal, setMyTotal] = useState(0);

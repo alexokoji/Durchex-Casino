@@ -4,7 +4,7 @@ import { Box, Typography } from '@mui/material';
 
 // displays the combined fiat+crypto balance as "chips"
 const UnifiedBalance = () => {
-    const authData = useSelector(state => state.auth);
+    const authData = useSelector(state => state.auth || {});
     if (!authData.isAuth || !authData.balanceData) return null;
 
     const total = authData.balanceData.reduce((sum, item) => {
