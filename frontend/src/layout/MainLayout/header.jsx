@@ -4,6 +4,20 @@ import AuthenticationModal from "views/main/modals/AuthModal";
 import WalletDepositModal from "views/main/modals/WalletDepositModal";
 import clsx from "clsx";
 import { useEffect, useState, useRef } from "react";
+
+// load Tawk.to chat globally
+function loadTawkScript() {
+    if (window.Tawk_API) return; // already loaded
+    var Tawk_API = window.Tawk_API || {}, Tawk_LoadStart = new Date();
+    (function(){
+        var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
+        s1.async=true;
+        s1.src='https://embed.tawk.to/69a7166f7b02b21c3601dcb1/1jiqav9pg';
+        s1.charset='UTF-8';
+        s1.setAttribute('crossorigin','*');
+        s0.parentNode.insertBefore(s1,s0);
+    })();
+}
 import { useSelector, useDispatch } from "react-redux";
 
 import { ReactComponent as AlarmIcon } from "assets/icons/AlarmIcon.svg";
