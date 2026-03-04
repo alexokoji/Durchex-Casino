@@ -6,20 +6,6 @@ import clsx from "clsx";
 import { useEffect, useState, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 
-// load Tawk.to chat globally
-function loadTawkScript() {
-    if (window.Tawk_API) return; // already loaded
-    var Tawk_API = window.Tawk_API || {}, Tawk_LoadStart = new Date();
-    (function(){
-        var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
-        s1.async=true;
-        s1.src='https://embed.tawk.to/69a7166f7b02b21c3601dcb1/1jiqav9pg';
-        s1.charset='UTF-8';
-        s1.setAttribute('crossorigin','*');
-        s0.parentNode.insertBefore(s1,s0);
-    })();
-}
-
 import { ReactComponent as AlarmIcon } from "assets/icons/AlarmIcon.svg";
 import { ReactComponent as ChatIcon } from "assets/icons/ChatIcon.svg";
 import { ReactComponent as SystemMessageIcon } from "assets/icons/MessageIcon.svg";
@@ -40,6 +26,20 @@ import SettingModal from "views/main/modals/SettingModal";
 import FairModal from "views/main/modals/FairModal";
 import { getCurrencies } from "redux/actions/payment";
 import PrivacyModal from "views/main/modals/PrivacyModal";
+
+// load Tawk.to chat globally
+function loadTawkScript() {
+    if (window.Tawk_API) return; // already loaded
+    var Tawk_API = window.Tawk_API || {}, Tawk_LoadStart = new Date();
+    (function(){
+        var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
+        s1.async=true;
+        s1.src='https://embed.tawk.to/69a7166f7b02b21c3601dcb1/1jiqav9pg';
+        s1.charset='UTF-8';
+        s1.setAttribute('crossorigin','*');
+        s0.parentNode.insertBefore(s1,s0);
+    })();
+}
 
 const useStyles = makeStyles(() => ({
     MainHeaderBox: {
