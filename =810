@@ -1,0 +1,4 @@
+166:   166	    CurrencyIcon: {
+816:   816	                                    <span className={classes.CurrencyIcon}>💎</span>
+895:   895	                                    <span className={classes.CurrencyIcon}>🪙</span>
+907:   907	                                                    <span className={classes.CurrencyIcon}>🪙</span>

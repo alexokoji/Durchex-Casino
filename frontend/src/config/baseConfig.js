@@ -19,7 +19,9 @@ const Config = {
         diceSocketUrl: isLocal ? 'http://localhost:5400' : 'https://casino.durchex.com:5401',
         slotSocketUrl: isLocal ? 'http://localhost:5500' : 'https://casino.durchex.com:5501',
         plinkoSocketUrl: isLocal ? 'http://localhost:5600' : 'https://casino.durchex.com:5601',
-        crashSocketUrl: isLocal ? 'http://localhost:5700' : 'https://casino.durchex.com:5701'
+        crashSocketUrl: isLocal ? 'http://localhost:5700' : 'https://casino.durchex.com:5701',
+        // future blackjack socket; default fallback to slot url until a dedicated service is available
+        blackjackSocketUrl: isLocal ? 'http://localhost:5800' : 'https://casino.durchex.com:5801'
     },
     token: 'PlayZelo',
     request: {

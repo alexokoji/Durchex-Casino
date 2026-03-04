@@ -85,6 +85,9 @@ exports.getPlinkoResult = async (data, socket) => {
         });
         if (response.status) {
             socketManager.sendBetResult({ ...response, fairResult }, socket);
+            // calculate profit for stats and broadcast new bet to clients
+            const profit = payout > 1 ? betAmount * (payout - 1) : 0;
+            socketManager.newBetUser({ userId, betAmount, coinType, payout, profit, roundResult, roundNumber });
             socketManager.sendBetHistory({
                 userId: userId,
                 gameType: 'plinko',

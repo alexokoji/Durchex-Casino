@@ -24,6 +24,18 @@ export default class PlinkoSocketManager {
             const message = { type: 'playzelo-Plinko-BetResult', data: response };
             self.postMessage(message);
         });
+        this.socket.on('newBetUser', function (response) {
+            const message = { type: 'playzelo-Plinko-NewBetUser', data: response };
+            self.postMessage(message);
+        });
+        this.socket.on('newCashout', function (response) {
+            const message = { type: 'playzelo-Plinko-NewCashout', data: response };
+            self.postMessage(message);
+        });
+        this.socket.on('removeBetUser', function (response) {
+            const message = { type: 'playzelo-Plinko-RemoveBetUser', data: response };
+            self.postMessage(message);
+        });
     }
 
     postMessage(message) {

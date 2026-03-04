@@ -24,6 +24,22 @@ export default class SlotSocketManager {
             const message = { type: 'playzelo-Slot-BetResult', data: response };
             self.postMessage(message);
         });
+
+        // broadcast of any user placing a bet (for statistics)
+        this.socket.on('newBetUser', function (response) {
+            const message = { type: 'playzelo-Slot-NewBetUser', data: response };
+            self.postMessage(message);
+        });
+
+        this.socket.on('newCashout', function (response) {
+            const message = { type: 'playzelo-Slot-NewCashout', data: response };
+            self.postMessage(message);
+        });
+
+        this.socket.on('removeBetUser', function (response) {
+            const message = { type: 'playzelo-Slot-RemoveBetUser', data: response };
+            self.postMessage(message);
+        });
     }
 
     postMessage(message) {

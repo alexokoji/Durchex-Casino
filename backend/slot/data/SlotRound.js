@@ -51,7 +51,21 @@ exports.getSlotResult = async (data, socket) => {
             payout
         });
         if (response.status) {
-            socketManager.sendBetResult({ ...response, fairResult, rewardData }, socket);
+            // compute profit (net gain, could be zero if lost)
+            const profit = payout > 0 ? betAmount * (payout - 1) : 0;
+            // notify the player of the result
+            socketManager.sendBetResult({ ...response, fairResult, rewardData, payout, profit, roundResult, roundNumber }, socket);
+            // broadcast new bet to all connected slot clients so they can track player counts
+            socketManager.newBetUser({
+                userId,
+                betAmount,
+                coinType,
+                payout,
+                profit,
+                roundResult,
+                roundNumber
+            });
+
             socketManager.sendBetHistory({
                 userId: userId,
                 gameType: 'slot',

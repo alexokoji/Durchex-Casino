@@ -8,6 +8,8 @@ import clsx from "clsx";
 import { useToasts } from "react-toast-notifications";
 import SettingBox from "views/components/setting";
 import { LoadingButton } from "@mui/lab";
+import UnifiedBalance from "components/UnifiedBalance";
+import GameStatus from "components/GameStatus";
 
 import ApngComponent from "react-apng";
 
@@ -408,6 +410,7 @@ const ScissorWidget = () => {
 
     const [betResponse, setBetResponse] = useState(null);
     const [winImage, setWinImage] = useState('');
+    const [betList, setBetList] = useState([]);
 
     const [showWinResult, setShowWinResult] = useState(false);
     const [playLoading, setPlayLoading] = useState(false);
@@ -612,7 +615,9 @@ const ScissorWidget = () => {
 
     const onWindowMessage = (event) => {
         if (event?.data?.type === 'playzelo-Scissors-BetResult') {
-            setBetResponse(event.data.data);
+            const d = event.data.data;
+            setBetResponse(d);
+            setBetList(prev => [...prev, { userId: d.result.userId, betAmount: d.result.betAmount, profit: d.result.profit || 0 }]);
         }
         if (event?.data?.type === 'playzelo-Scissors-HistoryResult') {
             const response = event.data.data;
@@ -622,6 +627,23 @@ const ScissorWidget = () => {
                 historyData.push(history.betNumber);
             });
             setBetHistory([...historyData]);
+        }
+        if (event?.data?.type === 'playzelo-Scissors-NewBetUser') {
+            const d = event.data.data;
+            setBetList(prev => [...prev, { userId: d.userId, betAmount: d.betAmount, profit: d.profit || 0 }]);
+        }
+        if (event?.data?.type === 'playzelo-Scissors-NewCashout') {
+            const d = event.data.data;
+            setBetList(prev => prev.map(b => {
+                if (b.userId === d.userId && b.betAmount === d.betAmount) {
+                    return { ...b, profit: d.profit || 0 };
+                }
+                return b;
+            }));
+        }
+        if (event?.data?.type === 'playzelo-Scissors-RemoveBetUser') {
+            const d = event.data.data;
+            setBetList(prev => prev.filter(b => b.userId !== d.userId));
         }
     };
 

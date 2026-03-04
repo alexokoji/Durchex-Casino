@@ -29,6 +29,10 @@ const removeRound = async (data) => {
             const roundData = AllMines[index];
             const result = await MinesController.saveMinesRound(roundData);
             if (result.status) {
+                // broadcast new bet with profit
+                const payout = result.data.payout;
+                const profit = (roundData.roundResult === RoundResult.payout || roundData.roundResult === RoundResult.finish) ? roundData.betAmount * (payout - 1) : 0;
+                SocketManager.newBetUser({ userId: result.data.userId, betAmount: result.data.betAmount, coinType: result.data.coinType, payout, profit, roundResult: result.data.roundResult, roundNumber: result.data.roundNumber });
                 SocketManager.sendBetHistory({
                     userId: result.data.userId,
                     gameType: 'mines',

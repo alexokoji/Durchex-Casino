@@ -1,5 +1,5 @@
 import { makeStyles } from "@mui/styles";
-import { Box, Button, FormControl, IconButton, MenuItem, Select, Typography } from "@mui/material";
+import { Box, Button, IconButton, Typography } from "@mui/material";
 import AuthenticationModal from "views/main/modals/AuthModal";
 import WalletDepositModal from "views/main/modals/WalletDepositModal";
 import clsx from "clsx";
@@ -66,6 +66,11 @@ const useStyles = makeStyles(() => ({
         height: 'auto',
         "@media (max-width: 1024px)": {
             display: 'none'
+        },
+        "@media (max-width: 681px)": {
+            display: 'block',
+            width: '100px',
+            height: 'auto'
         }
     },
     MenuIconButton: {
@@ -212,91 +217,7 @@ const useStyles = makeStyles(() => ({
             display: 'block'
         }
     },
-    CoinAmountBox: {
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        height: '40px',
-        width: '100%',
-        marginRight: '5px',
-        "@media (max-width: 1075px)": {
-            width: 'unset'
-        }
-    },
-    CoinIcon: {
-        width: '18px',
-        height: '18px',
-        marginRight: '2px'
-    },
-    CoinAmountSpan: {
-        color: 'rgb(249, 253, 255)',
-        fontWeight: '700',
-        fontSize: '18px',
-        width: '100%'
-    },
-    CoinTypeBox: {
-        background: '#2C2C3A',
-        padding: '0px 5px',
-        borderRadius: 4,
-        fontWeight: 'bold',
-        color: '#EC4F5B',
-        textTransform: 'uppercase',
-        fontSize: 13,
-        whiteSpace: 'pre',
-        border: 'solid 1px #363646',
-        "@media (max-width: 380px)": {
-            display: 'none'
-        }
-    },
-    CustomSelect: {
-        boxSizing: "border-box",
-        width: "341px",
-        height: "47px",
-        left: "0px",
-        top: "0px",
-        border: "1px solid #363646",
-        borderRadius: "8px",
-        background: "transparent",
-        color: '#FFF',
-        "&>svg.MuiSvgIcon-root": {
-            color: '#FFF'
-        },
-        "&>.MuiSelect-select": {
-            background: 'transparent',
-            color: '#FFF',
-            fontSize: '14px',
-            fontWeight: '700',
-            padding: '0px 10px',
-            height: '46px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'flex-start',
-            gap: '5px'
-        },
-        "&>.Mui-disabled": {
-            "-webkit-text-fill-color": 'unset',
-            opacity: '0.6'
-        },
-        "@media (max-width: 1224px)": {
-            width: '195px',
-            height: '47px'
-        },
-        "@media (max-width: 380px)": {
-            width: '155px'
-        }
-    },
-    CurrencyIcon: {
-        width: '16px',
-        height: '16px'
-    },
-    CustomMenuItem: {
-        color: '#FFF',
-        display: 'flex',
-        gap: '5px',
-        fontSize: '14px',
-        fontWeight: '700',
-        padding: '10px 16px'
-    },
+
     LevelIconBox: {
         position: 'absolute',
         right: '0px',
@@ -339,6 +260,19 @@ const useStyles = makeStyles(() => ({
         backdropFilter: 'blur(20px)',
         '@media (max-width: 1024px)': {
             width: '420px'
+        },
+        '@media (max-width: 681px)': {
+            position: 'fixed',
+            top: 'auto',
+            bottom: '0px',
+            left: '0px',
+            right: '0px',
+            width: '100%',
+            borderRadius: '24px 24px 0px 0px',
+            padding: '24px 16px 32px',
+            maxHeight: '70vh',
+            overflowY: 'auto',
+            boxShadow: '0 -20px 60px rgba(90, 69, 209, 0.8)'
         }
     },
     BalanceRow: {
@@ -356,6 +290,11 @@ const useStyles = makeStyles(() => ({
             border: '2px solid rgba(186, 106, 255, 0.7)',
             boxShadow: '0 12px 32px rgba(186, 106, 255, 0.35)',
             transform: 'translateY(-2px)'
+        },
+        '@media (max-width: 681px)': {
+            padding: '16px 12px',
+            marginBottom: '12px',
+            borderRadius: '10px'
         }
     },
     BalanceLabel: {
@@ -363,7 +302,11 @@ const useStyles = makeStyles(() => ({
         fontSize: '16px',
         fontWeight: 700,
         letterSpacing: '0.8px',
-        textTransform: 'uppercase'
+        textTransform: 'uppercase',
+        '@media (max-width: 681px)': {
+            fontSize: '13px',
+            letterSpacing: '0.5px'
+        }
     },
     BalanceValue: {
         color: '#FFF',
@@ -374,7 +317,10 @@ const useStyles = makeStyles(() => ({
         WebkitBackgroundClip: 'text',
         WebkitTextFillColor: 'transparent',
         textShadow: '0 2px 8px rgba(255, 215, 0, 0.4)',
-        letterSpacing: '0.5px'
+        letterSpacing: '0.5px',
+        '@media (max-width: 681px)': {
+            fontSize: '22px'
+        }
     },
     ProfileBox: {
         position: 'absolute',
@@ -514,6 +460,10 @@ const MainHeader = () => {
                 setChatPage(false);
             }
         }
+        // Close wallet dropdown on mobile when clicking outside
+        if (walletBtnRef.current && !walletBtnRef.current.contains(e.target)) {
+            setWalletDropdownOpen(false);
+        }
     };
 
     const setLevelModalOpen = (flag) => {
@@ -614,47 +564,18 @@ const MainHeader = () => {
                 )}
             </Box>
             <Box className={classes.HeaderMiddleBox}>
-                <Box className={classes.CoinAmountBox}>
-                    <FormControl fullWidth>
-                        <Select
-                            labelId="currencyType"
-                            id="currencyType"
-                            value={JSON.stringify(currency)}
-                            onChange={handleCurrency}
-                            className={classes.CustomSelect}
-                            disabled={!authData.isAuth}
-                        >
-                            {
-                                currencies.map((currency, index) => {
-                                    let currencyBalance = (authData.balanceData && authData.balanceData.length > 0) ? authData.balanceData.find((data) => data.coinType === currency.name && data.type === currency.token) : null;
-                                    
-                                    // Provide defaults if currencyBalance not found or incomplete
-                                    if (!currencyBalance) {
-                                        currencyBalance = { balance: 0, type: currency.token, coinType: currency.name };
-                                    }
-                                    
-                                    return (
-                                        <MenuItem key={index} value={JSON.stringify({ coinType: currency.name, type: currencyBalance?.type || currency.token })} className={classes.CustomMenuItem}>
-                                            {currency.name.toUpperCase() === 'CHIPS' ? (
-                                                <span className={classes.CurrencyIcon}>💎</span>
-                                            ) : (
-                                                <img className={classes.CurrencyIcon} src={`/assets/images/coins/${currency.name.toLowerCase()}.png`} alt='icon' />
-                                            )}
-                                            <span className={classes.CoinAmountSpan}>
-                                                {
-                                                    (currencyBalance?.balance || 0).toFixed(currency.decimal)
-                                                }
-                                            </span>
-                                            <Box className={classes.CoinTypeBox}>{(currency.token === 'native' || currency.token === '') ? currency.name : `${currency.name}(${currency.token})`}</Box>
-                                        </MenuItem>
-                                    )
-                                })
-                            }
-                        </Select>
-                    </FormControl>
-                </Box>
                 <Box style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <Box ref={walletBtnRef} onMouseEnter={() => setWalletDropdownOpen(true)} onMouseLeave={() => setWalletDropdownOpen(false)} onClick={() => setWalletDropdownOpen(!walletDropdownOpen)} sx={{ position: 'relative' }}>
+                    <Box ref={walletBtnRef} onMouseEnter={() => {
+                        // Only use hover on non-touch devices (desktop)
+                        if (!window.matchMedia('(hover: hover)').matches) return;
+                        setWalletDropdownOpen(true);
+                    }} onMouseLeave={() => {
+                        if (!window.matchMedia('(hover: hover)').matches) return;
+                        setWalletDropdownOpen(false);
+                    }} onClick={() => {
+                        // On mobile, toggle on click
+                        setWalletDropdownOpen(!walletDropdownOpen);
+                    }} sx={{ position: 'relative' }}>
                         <Button className={clsx(classes.HeaderButton, classes.WalletButton)} disabled={!authData.isAuth} onClick={handleWalletOpen}>
                             <span>Wallet</span>
                         </Button>

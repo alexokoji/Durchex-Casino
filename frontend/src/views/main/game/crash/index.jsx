@@ -1,5 +1,7 @@
 import { Box, Button, Typography } from "@mui/material";
 import { makeStyles } from "@mui/styles";
+import UnifiedBalance from "components/UnifiedBalance"; // unified chips balance across fiat/crypto
+import GameStatus from "components/GameStatus";
 import HistoryBox from "./utils/HistoryBox";
 import SettingBox from "views/components/setting";
 import { useEffect, useState, useRef } from "react";
@@ -566,6 +568,12 @@ const CrashGame = () => {
         // eslint-disable-next-line
     }, [removeBetUserResponse]);
 
+    // update total bet amount whenever betList changes (others are handled by GameStatus)
+    useEffect(() => {
+        const total = betList.reduce((s, b) => s + (b.betAmount || 0), 0);
+        setTotalBetAmount(total);
+    }, [betList]);
+
     useEffect(() => {
         if (roundStatus !== null) {
             if (roundStatus.status === GAME_STATE.COUNTDOWN) {
@@ -784,11 +792,13 @@ const CrashGame = () => {
                                 Auto
                             </Button>
                         </Box>
+                        {/* show unified balance above betting controls */}
+                        <UnifiedBalance />
                         <Box className={classes.BetAmountBox}>
                             <Typography className={classes.CommonLabel}>Bet Amount</Typography>
                             <Box className={classes.InputBackground}>
                                 <Box className={classes.InputBox}>
-                                    <span className={classes.CurrencyIcon}>💎</span>
+                                    <span className={classes.CurrencyIcon}>🪙</span>
                                     <input disabled={playLoading} type="number" value={betAmount} onChange={(e) => setBetAmount(e.target.value)} className={classes.BetAmountInput} />
                                     <Box className={classes.AmountActionBox}>
                                         <Button disabled={playLoading} onClick={() => handleAmountAction(0)} className={classes.AmountActionButton}>1/2</Button>
@@ -797,6 +807,10 @@ const CrashGame = () => {
                                     </Box>
                                 </Box>
                             </Box>
+                        </Box>
+                        {/* dynamic stats row -- replaced with unified component */}
+                        <Box sx={{ mb:1, p:1, bgcolor: '#00000080', borderRadius: 1 }}>
+                            <GameStatus bets={betList} />
                         </Box>
                         <Box className={classes.BetAmountBox}>
                             <Typography className={classes.CommonLabel}>Cashout At</Typography>
@@ -861,7 +875,7 @@ const CrashGame = () => {
                                     <span>{betList.length}</span>
                                 </Box>
                                 <Box className={classes.TotalBalanceBox}>
-                                    <span className={classes.CurrencyIcon}>💎</span>
+                                    <span className={classes.CurrencyIcon}>🪙</span>
                                     <span>{totalBetAmount}</span>
                                 </Box>
                             </Box>
@@ -873,7 +887,7 @@ const CrashGame = () => {
                                                 <Box className={classes.UserNameBox}>{item.userNickName}</Box>
                                                 <Box className={classes.CashoutBox}>{item.isCashout ? item.cashoutAt.toFixed(2) : '-'}</Box>
                                                 <Box className={classes.ListBetAmountBox}>
-                                                    <span className={classes.CurrencyIcon}>💎</span>
+                                                    <span className={classes.CurrencyIcon}>🪙</span>
                                                     <span>{item.isCashout ? (item.profit).toFixed(4) : Number(item.betAmount).toFixed(4)}</span>
                                                 </Box>
                                             </Box>

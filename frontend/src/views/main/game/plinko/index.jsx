@@ -3,6 +3,8 @@ import { makeStyles } from "@mui/styles";
 import HistoryBox from "./utils/HistoryBox";
 import SettingBox from "views/components/setting";
 import { useContext, useEffect, useState } from "react";
+import UnifiedBalance from "components/UnifiedBalance";
+import GameStatus from "components/GameStatus";
 import clsx from "clsx";
 import { useDispatch, useSelector } from "react-redux";
 import { useToasts } from "react-toast-notifications";
@@ -652,6 +654,7 @@ const PlinkoGame = () => {
     const [rowCount, setRowCount] = useState(ROWS.max);
     const [autoCount, setAutoCount] = useState(1);
     const [betResponse, setBetResponse] = useState(null);
+    const [betList, setBetList] = useState([]);
 
     useEffect(() => {
         window.addEventListener('resize', handleResize);
@@ -781,7 +784,26 @@ const PlinkoGame = () => {
 
     const onWindowMessage = (event) => {
         if (event?.data?.type === 'playzelo-Plinko-BetResult') {
-            setBetResponse({ ...event.data.data });
+            const d = event.data.data;
+            setBetResponse({ ...d });
+            setBetList(prev => [...prev, { userId: d.userId, betAmount: d.betAmount, profit: d.profit || 0 }]);
+        }
+        if (event?.data?.type === 'playzelo-Plinko-NewBetUser') {
+            const d = event.data.data;
+            setBetList(prev => [...prev, { userId: d.userId, betAmount: d.betAmount, profit: d.profit || 0 }]);
+        }
+        if (event?.data?.type === 'playzelo-Plinko-NewCashout') {
+            const d = event.data.data;
+            setBetList(prev => prev.map(b => {
+                if (b.userId === d.userId && b.betAmount === d.betAmount) {
+                    return { ...b, profit: d.profit || 0 };
+                }
+                return b;
+            }));
+        }
+        if (event?.data?.type === 'playzelo-Plinko-RemoveBetUser') {
+            const d = event.data.data;
+            setBetList(prev => prev.filter(b => b.userId !== d.userId));
         }
     };
 
@@ -1023,6 +1045,11 @@ const PlinkoGame = () => {
                             >
                                 Auto
                             </Button>
+                        </Box>
+                        {/* unified balance above betting controls */}
+                        <UnifiedBalance />
+                        <Box sx={{ mb:1, p:1, bgcolor: '#00000080', borderRadius: 1 }}>
+                            <GameStatus bets={betList} />
                         </Box>
                         <Box className={classes.BetAmountBox}>
                             <Typography className={classes.CommonLabel}>Bet Amount</Typography>

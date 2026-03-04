@@ -17,6 +17,27 @@ exports.sendBetResult = (data, socket) => {
     plinkoSocket.sendTo(socket, 'betResult', data);
 }
 
+exports.newBetUser = (data) => {
+    if (plinkoSocket === null)
+        return;
+
+    plinkoSocket.broadCast('newBetUser', data);
+}
+
+exports.newCashout = (data) => {
+    if (plinkoSocket === null)
+        return;
+
+    plinkoSocket.broadCast('newCashout', data);
+}
+
+exports.removeBetUser = (data) => {
+    if (plinkoSocket === null)
+        return;
+
+    plinkoSocket.broadCast('removeBetUser', data);
+}
+
 exports.sendBetHistory = (data) => {
     if (manageSocket !== null)
         manageSocket.newBetHistory(data);

@@ -3,6 +3,8 @@ import { makeStyles } from "@mui/styles";
 import HistoryBox from "./utils/HistoryBox";
 import SettingBox from "views/components/setting";
 import { useEffect, useState, useRef } from "react";
+import UnifiedBalance from "components/UnifiedBalance";
+import GameStatus from "components/GameStatus";
 import clsx from "clsx";
 import { useDispatch, useSelector } from "react-redux";
 import SlotSocketManager from "./utils/SlotSocketManager";
@@ -293,6 +295,7 @@ const SlotGame = () => {
     const [betResponse, setBetResponse] = useState(null);
 
     const [soundEvent, setSoundEvent] = useState(null);
+    const [betList, setBetList] = useState([]);
     const [playReelSound] = useSound(ReelSound);
     const [playMatchSound] = useSound(MatchSound);
     const [playWinSound] = useSound(WinSound);
@@ -381,16 +384,33 @@ const SlotGame = () => {
 
     const onWindowMessage = (event) => {
         if (event?.data?.type === 'playzelo-Slot-BetResult') {
-            setBetResponse({ ...event.data.data });
+            const d = event.data.data;
+            setBetResponse({ ...d });
+            // record bet so the stats component can show it (for ourselves)
+            setBetList(prev => [...prev, { userId: d.userId, betAmount: d.betAmount, profit: d.profit || 0 }]);
         }
-        if (event?.data?.type === 'playzelo-Slot-UpdateLoading') {
-            setPlayLoading(event.data.data);
+        if (event?.data?.type === 'playzelo-Slot-NewBetUser') {
+            const d = event.data.data;
         }
         if (event?.data?.type === 'playzelo-Slot-UpdateGameState') {
             dispatch({ type: 'SET_BALANCEDATA', data: balanceData })
         }
         if (event?.data?.type === 'playzelo-Slot-Sound') {
             setSoundEvent(event);
+        }
+        if (event?.data?.type === 'playzelo-Slot-NewCashout') {
+            const d = event.data.data;
+            // find existing bet and update profit/cashout
+            setBetList(prev => prev.map(b => {
+                if (b.userId === d.userId && b.betAmount === d.betAmount) {
+                    return { ...b, profit: d.profit || 0 };
+                }
+                return b;
+            }));
+        }
+        if (event?.data?.type === 'playzelo-Slot-RemoveBetUser') {
+            const d = event.data.data;
+            setBetList(prev => prev.filter(b => b.userId !== d.userId));
         }
     };
 
@@ -460,11 +480,17 @@ const SlotGame = () => {
                                 Auto
                             </Button>
                         </Box>
+                                        <UnifiedBalance />
+                        {/* stats box styled slightly with semi-transparent background */}
+                        <Box sx={{ mb:1, p:1, bgcolor: '#00000080', borderRadius: 1 }}>
+                            <GameStatus bets={betList} />
+                        </Box>
                         <Box className={classes.BetAmountBox}>
                             <Typography className={classes.CommonLabel}>Bet Amount</Typography>
                             <Box className={classes.InputBackground}>
                                 <Box className={classes.InputBox}>
-                                    <span className={classes.CurrencyIcon}>💎</span>
+                                    {/* use chip icon for all games now */}
+                                    <span className={classes.CurrencyIcon}>🪙</span>
                                     <input disabled={playLoading} type="number" value={betAmount} onChange={(e) => setBetAmount(e.target.value)} className={classes.BetAmountInput} />
                                     <Box className={classes.AmountActionBox}>
                                         <Button disabled={playLoading} onClick={() => handleAmountAction(0)} className={classes.AmountActionButton}>1/2</Button>

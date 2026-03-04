@@ -36,7 +36,22 @@ export default class ScissorsSocketManager {
         this.socket.on('newRound', function (response) {
             const message = { type: 'playzelo-Scissors-NewRound', data: response };
             self.postMessage(message);
-        })
+        });
+
+        this.socket.on('newBetUser', function (response) {
+            const message = { type: 'playzelo-Scissors-NewBetUser', data: response };
+            self.postMessage(message);
+        });
+
+        this.socket.on('newCashout', function (response) {
+            const message = { type: 'playzelo-Scissors-NewCashout', data: response };
+            self.postMessage(message);
+        });
+
+        this.socket.on('removeBetUser', function (response) {
+            const message = { type: 'playzelo-Scissors-RemoveBetUser', data: response };
+            self.postMessage(message);
+        });
     }
 
     postMessage(message) {

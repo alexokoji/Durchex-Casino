@@ -18,6 +18,10 @@ exports.getScissorsResult = async (data, socket) => {
         const response = await scissorsController.saveScissorsRound({ userId, betAmount, playerNumber, dealerNumber, result, coinType, roundNumber, clientSeed: seedData.clientSeedData.seed, serverSeed: seedData.serverSeedData.seed });
         socketManager.sendBetResult({ playerNumber, dealerNumber, winResult: result, result: response }, socket);
         if (response.status) {
+            // calculate profit for stats
+            const payout = response.roundData.payout;
+            const profit = result === 'win' ? betAmount * (payout - 1) : 0;
+            socketManager.newBetUser({ userId, betAmount, coinType, payout, profit, roundResult: result, roundNumber });
             setTimeout(() => {
                 socketManager.sendBetHistory({
                     userId: response.roundData.userId,

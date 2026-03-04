@@ -25,12 +25,26 @@ const modalBoxStyle = {
   borderRadius: '16px',
   padding: '30px',
   overflowY: 'auto',
-  '@media (max-width: 681px)': {
-    width: 'calc(100% - 60px)',
+  '@media (max-width: 1024px)': {
+    width: '600px',
+    padding: '24px'
+  },
+  '@media (max-width: 768px)': {
+    width: 'calc(100% - 40px)',
     maxHeight: '85vh',
-    borderRadius: '8px',
+    borderRadius: '12px',
     padding: '20px',
     marginTop: '20px'
+  },
+  '@media (max-width: 600px)': {
+    width: '100vw',
+    height: '100vh',
+    maxHeight: '100vh',
+    marginTop: '0px',
+    left: '0px',
+    transform: 'none',
+    borderRadius: '0px',
+    padding: '16px'
   }
 };
 
@@ -39,7 +53,12 @@ const sectionStyle = {
   borderRadius: '12px',
   padding: '20px',
   marginBottom: '20px',
-  border: '1px solid #404060'
+  border: '1px solid #404060',
+  '@media (max-width: 600px)': {
+    padding: '16px',
+    borderRadius: '10px',
+    marginBottom: '16px'
+  }
 };
 
 const badgeStyle = {

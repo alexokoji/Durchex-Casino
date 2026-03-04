@@ -1,14 +1,17 @@
 import { Box, Button, Typography } from "@mui/material";
 import { makeStyles } from "@mui/styles";
+import UnifiedBalance from "components/UnifiedBalance";
+import GameStatus from "components/GameStatus";
 import HistoryBox from "./utils/HistoryBox";
 import SettingBox from "views/components/setting";
 import { useSelector } from "react-redux";
 // import { useToasts } from "react-toast-notifications";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import clsx from "clsx";
 // import { LoadingContext } from "layout/Context/loading";
 import CardBox from "./utils/Card";
 import { BLACKJACK_CARD_TYPE, BLACKJACK_CARD_NUMBER } from "config/constant";
+import BlackjackSocketManager from "./utils/BlackjackSocketManager";
 
 const useStyles = makeStyles(() => ({
     MainContainer: {
@@ -218,6 +221,34 @@ const BlackjackGame = () => {
 
     const setting = { min: 1, max: 1000 };
     const [betAmount, setBetAmount] = useState(setting.min);
+    const [betList, setBetList] = useState([]);
+
+    const onWindowMessage = (event) => {
+        if (event?.data?.type === 'playzelo-Blackjack-NewBetUser') {
+            const d = event.data.data;
+            setBetList(prev => [...prev, { userId: d.userId, betAmount: d.betAmount, profit: d.profit || 0 }]);
+        }
+        if (event?.data?.type === 'playzelo-Blackjack-BetResult') {
+            const d = event.data.data;
+            // update existing user's profit if we are the same user
+            setBetList(prev => prev.map(b => {
+                if (b.userId === d.userId && b.betAmount === d.betAmount) {
+                    return { ...b, profit: d.profit || 0 };
+                }
+                return b;
+            }));
+        }
+    };
+
+    useEffect(() => {
+        window.addEventListener('message', onWindowMessage);
+        BlackjackSocketManager.getInstance().connect();
+        return () => {
+            window.removeEventListener('message', onWindowMessage);
+            BlackjackSocketManager.getInstance().disconnect();
+        };
+        // eslint-disable-next-line
+    }, []);
 
     const cardData = {
         dealer: [
@@ -231,6 +262,7 @@ const BlackjackGame = () => {
             { open: true, type: BLACKJACK_CARD_TYPE.DIAMONDS, number: BLACKJACK_CARD_NUMBER.NUMBER_5 }
         ]
     };
+
 
     const handleAmountAction = (type) => {
         switch (type) {
@@ -249,6 +281,14 @@ const BlackjackGame = () => {
     };
 
     const handleBet = () => {
+        // record user's bet locally; profit will be calculated later when result comes in
+        const userId = authData.userData?._id;
+        const betEntry = { userId, betAmount, profit: 0 };
+        setBetList(prev => [...prev, betEntry]);
+        // also broadcast event so others (or ourselves) can pick it up
+        window.postMessage({ type: 'playzelo-Blackjack-NewBetUser', data: betEntry }, '*');
+        // optionally inform server if we later have a blackjack socket service
+        BlackjackSocketManager.getInstance().placeBet({ userId, betAmount, coinType: 'CHIPS' });
     };
 
     return (
@@ -257,11 +297,15 @@ const BlackjackGame = () => {
                 <SettingBox />
                 <Box className={classes.GameMainBox}>
                     <Box className={classes.GameControlPanel}>
+                        <UnifiedBalance />
+                        <Box sx={{ mb:1, p:1, bgcolor: '#00000080', borderRadius: 1 }}>
+                            <GameStatus bets={betList} />
+                        </Box>
                         <Box className={classes.BetAmountBox}>
                             <Typography className={classes.CommonLabel}>Bet Amount</Typography>
                             <Box className={classes.InputBackground}>
                                 <Box className={classes.InputBox}>
-                                    <span className={classes.CurrencyIcon}>💎</span>
+                                    <span className={classes.CurrencyIcon}>🪙</span>
                                     <input type="number" value={betAmount} onChange={(e) => setBetAmount(e.target.value)} className={classes.BetAmountInput} />
                                     <Box className={classes.AmountActionBox}>
                                         <Button onClick={() => handleAmountAction(0)} className={classes.AmountActionButton}>1/2</Button>

@@ -15,6 +15,8 @@ import clickSound from "assets/sounds/bitkong/cell-click.mp3";
 import winSound from "assets/sounds/bitkong/cell-win.mp3";
 import lostSound from "assets/sounds/bitkong/lost.mp3";
 import profitSound from "assets/sounds/bitkong/profit.mp3";
+import UnifiedBalance from "components/UnifiedBalance";
+import GameStatus from "components/GameStatus";
 
 const useStyles = makeStyles(() => ({
     MinesContainer: {
@@ -447,6 +449,7 @@ const Mines = () => {
     const [boardData, setBoardData] = useState(Array.from(Array(BoardRows), () => Array(BoardCols).fill(0)));
     const [selectData, setSelectData] = useState(Array.from(Array(BoardRows), () => Array(BoardCols).fill(false)))
 
+    const [betList, setBetList] = useState([]);
     const payoutAmount = Number(betAmount * curPayout).toFixed(6);
     const nextPayoutAmount = Number(betAmount * nextPayout).toFixed(2);
 
@@ -611,6 +614,23 @@ const Mines = () => {
                 setActiveRound(event.data.data.roundData);
             }
         }
+        if (event?.data?.type === 'playzelo-mines-newBetUser') {
+            const d = event.data.data;
+            setBetList(prev => [...prev, { userId: d.userId, betAmount: d.betAmount, profit: d.profit || 0 }]);
+        }
+        if (event?.data?.type === 'playzelo-mines-newCashout') {
+            const d = event.data.data;
+            setBetList(prev => prev.map(b => {
+                if (b.userId === d.userId && b.betAmount === d.betAmount) {
+                    return { ...b, profit: d.profit || 0 };
+                }
+                return b;
+            }));
+        }
+        if (event?.data?.type === 'playzelo-mines-removeBetUser') {
+            const d = event.data.data;
+            setBetList(prev => prev.filter(b => b.userId !== d.userId));
+        }
     };
 
     const handleBetAmount = (e) => {
@@ -700,6 +720,10 @@ const Mines = () => {
         <Box className={classes.MinesContainer}>
             <Box className={classes.GamePanelBox}>
                 <SettingBox />
+                <UnifiedBalance />
+                <Box sx={{ mb:1, p:1, bgcolor: '#00000080', borderRadius: 1 }}>
+                    <GameStatus bets={betList} />
+                </Box>
                 <img src="/assets/images/mines/cat.png" alt="cat" className={classes.WolfImage} />
                 <img src="/assets/images/mines/woman.png" alt="woman" className={classes.ManImage} />
                 <Box className={classes.MinesGameBox}>

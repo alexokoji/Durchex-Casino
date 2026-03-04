@@ -36,3 +36,24 @@ exports.sendBetHistory = (data) => {
     if (manageSocket !== null)
         manageSocket.newBetHistory(data);
 }
+
+exports.newBetUser = (data) => {
+    if (scissorsSocket === null)
+        return;
+
+    scissorsSocket.broadCast('newBetUser', data);
+}
+
+exports.newCashout = (data) => {
+    if (scissorsSocket === null)
+        return;
+
+    scissorsSocket.broadCast('newCashout', data);
+}
+
+exports.removeBetUser = (data) => {
+    if (scissorsSocket === null)
+        return;
+
+    scissorsSocket.broadCast('removeBetUser', data);
+}

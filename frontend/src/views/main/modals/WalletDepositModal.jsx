@@ -46,7 +46,26 @@ const modalBoxStyle = {
   maxHeight: '90vh',
   overflow: 'hidden',
   boxShadow: '0 20px 60px rgba(90, 69, 209, 0.3)',
-  border: '1px solid rgba(90, 69, 209, 0.2)'
+  border: '1px solid rgba(90, 69, 209, 0.2)',
+  '@media (max-width: 1024px)': {
+    width: '700px',
+    marginTop: '40px'
+  },
+  '@media (max-width: 768px)': {
+    width: '90vw',
+    maxWidth: '100%',
+    marginTop: '30px',
+    borderRadius: '16px'
+  },
+  '@media (max-width: 600px)': {
+    width: '100vw',
+    height: '100vh',
+    maxHeight: '100vh',
+    marginTop: '0px',
+    left: '0px',
+    transform: 'none',
+    borderRadius: '0px'
+  }
 };
 
 const headerStyle = {
@@ -55,7 +74,10 @@ const headerStyle = {
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+  '@media (max-width: 600px)': {
+    padding: '16px'
+  }
 };
 
 const tabsContainerStyle = {
@@ -81,6 +103,22 @@ const tabsContainerStyle = {
     '&:hover': {
       color: '#FFC107'
     }
+  },
+  '@media (max-width: 768px)': {
+    '& .MuiTab-root': {
+      fontSize: '12px',
+      padding: '12px 8px'
+    }
+  },
+  '@media (max-width: 600px)': {
+    '& .MuiTab-root': {
+      fontSize: '11px',
+      padding: '12px 6px',
+      minWidth: '60px'
+    },
+    '& .MuiTabs-flexContainer': {
+      flexWrap: 'wrap'
+    }
   }
 };
 
@@ -101,6 +139,14 @@ const contentStyle = {
     '&:hover': {
       background: 'rgba(90, 69, 209, 0.7)'
     }
+  },
+  '@media (max-width: 768px)': {
+    padding: '18px',
+    maxHeight: 'calc(90vh - 160px)'
+  },
+  '@media (max-width: 600px)': {
+    padding: '16px',
+    maxHeight: 'calc(100vh - 160px)'
   }
 };
 
@@ -136,7 +182,11 @@ const buttonStyle = {
   fontSize: '12px',
   borderRadius: '8px',
   padding: '10px 24px',
-  transition: 'all 0.3s ease'
+  transition: 'all 0.3s ease',
+  '@media (max-width: 600px)': {
+    fontSize: '11px',
+    padding: '8px 16px'
+  }
 };
 
 const primaryButtonStyle = {
@@ -169,7 +219,11 @@ const formCardStyle = {
   border: '1px solid rgba(90, 69, 209, 0.2)',
   borderRadius: '12px',
   padding: '16px',
-  marginBottom: '16px'
+  marginBottom: '16px',
+  '@media (max-width: 600px)': {
+    padding: '12px',
+    borderRadius: '10px'
+  }
 };
 
 export default function WalletDepositModal({ open, onClose }) {  const API_URL = process.env.REACT_APP_API_URL || '';  const auth = useSelector((s) => s.authentication);

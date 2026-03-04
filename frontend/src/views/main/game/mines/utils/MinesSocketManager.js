@@ -42,6 +42,21 @@ export default class MinesSocketManager {
             const message = { type: 'playzelo-mines-activeRoundResult', data: response };
             self.postMessage(message);
         });
+
+        this.socket.on('newBetUser', function (response) {
+            const message = { type: 'playzelo-mines-newBetUser', data: response };
+            self.postMessage(message);
+        });
+
+        this.socket.on('newCashout', function (response) {
+            const message = { type: 'playzelo-mines-newCashout', data: response };
+            self.postMessage(message);
+        });
+
+        this.socket.on('removeBetUser', function (response) {
+            const message = { type: 'playzelo-mines-removeBetUser', data: response };
+            self.postMessage(message);
+        });
     }
 
     postMessage(message) {

@@ -25,6 +25,28 @@ exports.sendBetResult = (data, socket) => {
     diceSocket.sendTo(socket, 'betResult', data);
 }
 
+// broadcasts for stats
+exports.newBetUser = (data) => {
+    if (diceSocket === null)
+        return;
+
+    diceSocket.broadCast('newBetUser', data);
+}
+
+exports.newCashout = (data) => {
+    if (diceSocket === null)
+        return;
+
+    diceSocket.broadCast('newCashout', data);
+}
+
+exports.removeBetUser = (data) => {
+    if (diceSocket === null)
+        return;
+
+    diceSocket.broadCast('removeBetUser', data);
+}
+
 exports.sendHistoryData = (data, socket) => {
     if (diceSocket === null)
         return;

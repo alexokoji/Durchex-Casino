@@ -27,7 +27,10 @@ exports.getDiceResult = async (data, socket) => {
 
         const response = await diceController.saveDiceRound({ roundNumber, userId, betAmount, coinType, difficulty, isOver, payout, fairData, roundResult, serverSeed: seedData.serverSeedData.seed, clientSeed: seedData.clientSeedData.seed });
         if (response.status) {
+            // calculate profit for stats
+            const profit = roundResult === 'win' ? betAmount * (payout - 1) : 0;
             socketManager.sendBetResult(response, socket);
+            socketManager.newBetUser({ userId, betAmount, coinType, payout, profit, roundResult, roundNumber });
             socketManager.sendBetHistory({
                 userId: userId,
                 gameType: 'dice',

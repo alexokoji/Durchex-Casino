@@ -3,6 +3,8 @@ import { makeStyles } from "@mui/styles";
 import clsx from "clsx";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import UnifiedBalance from "components/UnifiedBalance";
+import GameStatus from "components/GameStatus";
 import DiceL from "./utils/DiceL";
 import DiceR from "./utils/DiceR";
 import DiceSocketManager from "./utils/DiceSocketManager";
@@ -410,6 +412,7 @@ const Dice = () => {
 
     const [betResponse, setBetResponse] = useState(null);
     const [historyData, setHistoryData] = useState([]);
+    const [betList, setBetList] = useState([]); // for live stats
     const [diceData, setDiceData] = useState({ l: 6, r: 6 });
     const [playLoading, setPlayLoading] = useState(false);
 
@@ -535,7 +538,27 @@ const Dice = () => {
 
     const onWindowMessage = (event) => {
         if (event?.data?.type === 'playzelo-Dice-BetResult') {
-            setBetResponse({ ...event.data.data });
+            const d = event.data.data;
+            setBetResponse({ ...d });
+            // record our bet for stats
+            setBetList(prev => [...prev, { userId: d.userId, betAmount: d.betAmount, profit: d.profit || 0 }]);
+        }
+        if (event?.data?.type === 'playzelo-Dice-NewBetUser') {
+            const d = event.data.data;
+            setBetList(prev => [...prev, { userId: d.userId, betAmount: d.betAmount, profit: d.profit || 0 }]);
+        }
+        if (event?.data?.type === 'playzelo-Dice-NewCashout') {
+            const d = event.data.data;
+            setBetList(prev => prev.map(b => {
+                if (b.userId === d.userId && b.betAmount === d.betAmount) {
+                    return { ...b, profit: d.profit || 0 };
+                }
+                return b;
+            }));
+        }
+        if (event?.data?.type === 'playzelo-Dice-RemoveBetUser') {
+            const d = event.data.data;
+            setBetList(prev => prev.filter(b => b.userId !== d.userId));
         }
     };
 
@@ -549,6 +572,11 @@ const Dice = () => {
         <Box className={classes.MainContainer}>
             <Box className={classes.GamePanelBox}>
                 <SettingBox />
+                <UnifiedBalance />
+                {/* stats area */}
+                <Box sx={{ mb:1, p:1, bgcolor: '#00000080', borderRadius: 1 }}>
+                    <GameStatus bets={betList} />
+                </Box>
                 <img src="/assets/images/dice/wolf.png" alt="wolf" className={classes.WolfImage} />
                 <img src="/assets/images/dice/man.png" alt="man" className={classes.ManImage} />
                 <Box className={classes.DicePanelBox}>
