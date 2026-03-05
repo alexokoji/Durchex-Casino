@@ -572,8 +572,11 @@ export class CrashLayer extends BaseLayer {
             align: 'center'
         });
 
-        container_cashout.addChild(this.createText(cashout.profit.toFixed(2), style1, position.x - 60.0 * gameApp.scale_x, position.y - 93.0 * gameApp.scale_y, 0.5, 0.5, 1.0));
-        container_cashout.addChild(this.createText(cashout.payout.toFixed(2) + 'x', style2, position.x - 60.0 * gameApp.scale_x, position.y - 73.0 * gameApp.scale_y, 0.5, 0.5, 1.0));
+        // sanitize numeric values so we never call toFixed on something unexpected
+        const profitNum = Number(cashout && cashout.profit) || 0;
+        const payoutNum = Number(cashout && cashout.payout) || 0;
+        container_cashout.addChild(this.createText(profitNum.toFixed(2), style1, position.x - 60.0 * gameApp.scale_x, position.y - 93.0 * gameApp.scale_y, 0.5, 0.5, 1.0));
+        container_cashout.addChild(this.createText(payoutNum.toFixed(2) + 'x', style2, position.x - 60.0 * gameApp.scale_x, position.y - 73.0 * gameApp.scale_y, 0.5, 0.5, 1.0));
         container_cashout.alpha = 0;
         this.addChild(container_cashout);
 

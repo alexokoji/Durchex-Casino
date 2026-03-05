@@ -465,8 +465,8 @@ const CrashGame = () => {
                         betAmount: item.betAmount,
                         coinType: item.coinType.coinType,
                         isCashout: item.isCashouted,
-                        cashoutAt: item.payout,
-                        profit: item.payout
+                        cashoutAt: Number(item.payout),
+                        profit: Number(item.payout)
                     };
                     list.push(newUser);
                 });
@@ -533,8 +533,8 @@ const CrashGame = () => {
                 betAmount: newBetUserResponse.betAmount,
                 coinType: newBetUserResponse.coinType.coinType,
                 isCashout: newBetUserResponse.isCashouted,
-                cashoutAt: newBetUserResponse.payout,
-                profit: newBetUserResponse.payout
+                cashoutAt: Number(newBetUserResponse.payout),
+                profit: Number(newBetUserResponse.payout)
             };
             list.push(newUser);
             setBetList([...list]);
@@ -544,17 +544,24 @@ const CrashGame = () => {
 
     useEffect(() => {
         if (newCashoutResponse !== null) {
+            // coerce numeric fields to numbers before using
+            const sanitized = {
+                ...newCashoutResponse,
+                payout: Number(newCashoutResponse.payout) || 0,
+                profit: Number(newCashoutResponse.profit) || 0
+            };
+
             let list = [...betList];
-            let index = list.findIndex(item => item.userId === newCashoutResponse.userId);
+            let index = list.findIndex(item => item.userId === sanitized.userId);
             if (index >= 0) {
-                list[index].isCashout = newCashoutResponse.isCashouted;
-                list[index].cashoutAt = newCashoutResponse.payout;
-                list[index].profit = newCashoutResponse.profit;
+                list[index].isCashout = sanitized.isCashouted;
+                list[index].cashoutAt = sanitized.payout;
+                list[index].profit = sanitized.profit;
             }
             setBetList([...list]);
 
             if (gameApp !== null)
-                gameApp.createCashout(newCashoutResponse);
+                gameApp.createCashout(sanitized);
         }
         // eslint-disable-next-line
     }, [newCashoutResponse]);

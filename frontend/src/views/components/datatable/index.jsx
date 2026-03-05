@@ -190,14 +190,14 @@ const DataTable = ({ historyState, gameType = "all" }) => {
                                             }
                                         >
                                             {
-                                                (item.roundResult === 'win' || item.roundResult === 'payout') ? (item.betAmount * item.payout).toFixed(2)
+                                                (item.roundResult === 'win' || item.roundResult === 'payout') ? (item.betAmount * parseFloat(item.payout)).toFixed(2)
                                                     : item.roundResult === 'draw' || item.roundResult === 'finish' ? item.betAmount.toFixed(2) : `-${item.betAmount.toFixed(2)}`
                                             }
                                         </span>
                                     </Box>
                                 </Box>
                                 <Box style={{ width: '10%' }}>
-                                    <span style={{ color: '#FFF' }}>x{item.payout.toFixed(2)}</span>
+                                    <span style={{ color: '#FFF' }}>x{parseFloat(item.payout).toFixed(2)}</span>
                                 </Box>
                                 <Box style={{ width: '10%', textAlign: 'right', paddingRight: '20px' }}>
                                     <img alt='icon' src={`/assets/images/games/${item.gameType}.png`} width="30px" />
