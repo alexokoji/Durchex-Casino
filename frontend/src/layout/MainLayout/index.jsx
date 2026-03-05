@@ -42,8 +42,8 @@ const MainLayout = () => {
 
     const { addToast } = useToasts();
 
-    const authData = useSelector((state) => state.authentication);
-    const menuOption = useSelector((state) => state.menuOption);
+    const authData = useSelector((state) => state.authentication || {});
+    const menuOption = useSelector((state) => state.menuOption || {});
 
     useEffect(() => {
         const checkAuthentication = async () => {

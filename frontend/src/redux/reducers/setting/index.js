@@ -1,8 +1,8 @@
 const preState = {
     inited: false,
-    sound: false,
-    backgroundSound: false,
-    effectSound: false,
+    sound: true,
+    backgroundSound: true,
+    effectSound: true,
     hotkey: false,
     animation: false,
     maxBet: false
